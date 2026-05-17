@@ -146,11 +146,7 @@ if student_answer := st.chat_input("Deine Antwort..."):
     with st.chat_message("assistant"):
         with st.spinner("Jordan bewertet deine Antwort..."):
             
-            system_prompt = f"""Du bist Jordan Belfort, Tutor für EBWL. Der Student hat geantwortet.
-            FRAGE: {q['Frage']}
-            MUSTERANTWORT: {q['Musterantwort']}
-            STUDENTENANTWORT: {student_answer}
-            
+            system_prompt = """Du bist Jordan Belfort, Tutor für EBWL.
             DEINE AUFGABE:
             1. Bewerte die Antwort in deinem typischen Wall-Street-Slang. Sei streng, aber fair.
             2. Wenn die Antwort komplett falsch ist, vergib [+0 XP].
@@ -158,9 +154,17 @@ if student_answer := st.chat_input("Deine Antwort..."):
             4. Wenn sie absolut perfekt ist, vergib [+20 XP].
             Du MUSST die XP am Ende deiner Nachricht im Format [+X XP] schreiben!"""
             
+            user_prompt = f"""Hier sind die Daten für die Bewertung:
+            FRAGE: {q['Frage']}
+            MUSTERANTWORT: {q['Musterantwort']}
+            STUDENTENANTWORT: {student_answer}"""
+            
             completion = client.chat.completions.create(
                 model="llama3-8b-8192",
-                messages=[{"role": "system", "content": system_prompt}]
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ]
             )
             
             answer = completion.choices[0].message.content
