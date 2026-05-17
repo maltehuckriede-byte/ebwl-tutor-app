@@ -58,17 +58,12 @@ def get_image_base64(auto_name):
                 return f"data:{mime_type};base64,{base64.b64encode(img_file.read()).decode()}"
     return ""
 
-# HIER IST WIEDER DAS VOLLE, GEILE KARTEN-DESIGN:
 def render_card_html(auto_name):
     info = KARTEN_KATALOG.get(auto_name)
     if not info: return ""
     bild_url = get_image_base64(auto_name)
+    bild_html = f'<img src="{bild_url}" style="width: 100%; height: 100%; object-fit: cover;">' if bild_url else '🏎️'
     
-    if not bild_url:
-        bild_html = f'<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:50px; background: #e2eaf3;">🏎️</div>'
-    else:
-        bild_html = f'<img src="{bild_url}" style="width: 100%; height: 100%; object-fit: cover;">'
-        
     tabellen_rows = "".join([f"<tr><td style='padding: 4px 8px; border-bottom: 1px solid #eee; color: #333;'>{k}</td><td style='padding: 4px 8px; text-align: right; font-weight: bold; border-bottom: 1px solid #eee; color: #111;'>{v}</td></tr>" for k, v in info['daten'].items()])
 
     if "Legendary" in info['rarity']:
@@ -199,8 +194,6 @@ def show_lootbox_popup():
     save_data(database)
     
     st.success(f"Herzlichen Glückwunsch! Du hast **{auto}** gezogen!")
-    
-    # Zentrierte Darstellung der großen Karte im Pop-Up
     col1, col2, col3 = st.columns([0.5, 3, 0.5])
     with col2:
         st.components.v1.html(render_card_html(auto), height=460)
@@ -243,7 +236,6 @@ with st.sidebar:
             st.session_state.xp -= 30 
             database[st.session_state.username]["xp"] = st.session_state.xp
             save_data(database)
-            # Öffnet das zentrale Pop-Up Fenster!
             show_lootbox_popup()
         else:
             st.error("Nicht genug XP!")
@@ -266,36 +258,53 @@ for msg in st.session_state.chat_history:
 
 q = st.session_state.current_question
 
+# NEU: Der Disclaimer über dem Eingabefeld
+st.markdown("<div style='text-align: center; font-size: 13px; color: #888; margin-top: 30px; margin-bottom: 5px;'>🐺 Wolf of Wüllnerstraße ist eine KI und kann Fehler machen. Bitte überprüfe wichtige Fakten.</div>", unsafe_allow_html=True)
+
 if student_answer := st.chat_input("Deine Antwort eingeben..."):
+    # Wir fügen die Antwort der Historie hinzu
     st.session_state.chat_history.append({"role": "user", "content": student_answer})
     with st.chat_message("user"): st.markdown(student_answer)
 
     with st.chat_message("assistant"):
         with st.spinner(f"{st.session_state.current_tutor} prüft deine Antwort..."):
             
-            # Der kulante System Prompt!
-            sys_text = f"""Du bist {st.session_state.current_tutor}, ein genialer Tutor für EBWL. 
-            Bewerte die Antwort im passenden Slang. 
-            WICHTIG: Sei kulant! Es geht rein um den inhaltlichen Sinn und die Fakten, nicht um exakte Formatierung oder Rechtschreibung.
-            - Komplett falsch: [+0 XP]
-            - Teilweise richtig: [+10 XP]
-            - Inhaltlich richtig (Kernfakten getroffen): [+20 XP]
-            Du MUSST die XP am Ende exakt im Format [+X XP] ausgeben!"""
+            # --- DER NEUE, HARTE ROLLENSPIEL- UND INTERAKTIONS-PROMPT ---
+            sys_text = f"""Du bist {st.session_state.current_tutor}, ein genialer, aber extrem charakterstarker Tutor für BWL. 
+            WICHTIGSTE REGEL: Du MUSST deine Rolle absolut übertrieben spielen! Nutze deinen typischen Slang, Floskeln und deine Persönlichkeit in JEDEM Satz. (Ein Jordan Belfort nutzt Wall-Street-Slang, redet über Geld, nennt den Studenten 'Rookie'. Ein Albert Einstein redet über das Universum, Physik und nennt ihn 'mein lieber Forscherfreund'). Verlass NIEMALS deine Rolle!
+
+            Du prüfst gerade folgende Frage:
+            FRAGE: {q.get('Frage', '')}
+            MUSTERANTWORT: {q.get('Musterantwort', '')}
+
+            BEWERTUNGSREGELN (Sei kulant bei Grammatik, es geht um den inhaltlichen Sinn):
+            1. Komplett falsch: Beleidige den Studenten passend zu deiner Rolle, erkläre die korrekte Lösung, vergib [+0 XP] und schreibe GANZ AM ENDE das Wort [WEITER].
+            2. Teilweise richtig: Lobe ihn leicht in deiner Rolle, vergib Teilpunkte (z.B. [+10 XP]) und HAKE SPEZIFISCH NACH, was noch fehlt! Schreibe in diesem Fall NICHT das Wort [WEITER], damit der Student noch einmal antworten kann.
+            3. Perfekt beantwortet (oder fehlenden Rest nachgeliefert): Feiere ihn extrem ab, vergib die restlichen oder vollen Punkte (z.B. [+20 XP] oder [+10 XP]) und schreibe GANZ AM ENDE exakt das Wort [WEITER].
             
-            usr_text = f"KAPITEL: {q.get('Foliensatz', '')}\nFRAGE: {q.get('Frage', '')}\nMUSTERANTWORT: {q.get('Musterantwort', '')}\nSTUDENTENANTWORT: {student_answer}"
+            Du MUSST die XP in jedem Fall in deiner Antwort exakt im Format [+X XP] ausgeben!
+            """
+            
+            # Wir übergeben Llama die Anweisungen UND die letzten Nachrichten für den Kontext
+            groq_messages = [{"role": "system", "content": sys_text}]
+            
+            # Die letzten 6 Nachrichten des Chats mitsenden, damit die KI weiß, ob sie gerade nachgehakt hat!
+            for msg in st.session_state.chat_history[-6:]:
+                groq_messages.append({"role": msg["role"], "content": msg["content"]})
             
             try:
                 completion = client.chat.completions.create(
                     model="llama-3.3-70b-versatile",
-                    messages=[
-                        {"role": "system", "content": sys_text},
-                        {"role": "user", "content": usr_text}
-                    ]
+                    messages=groq_messages
                 )
                 answer = completion.choices[0].message.content
-                st.markdown(answer)
+                
+                # Wir filtern das [WEITER] für die Anzeige heraus, damit es unsichtbar für den Nutzer bleibt
+                display_answer = answer.replace("[WEITER]", "").strip()
+                st.markdown(display_answer)
                 st.session_state.chat_history.append({"role": "assistant", "content": answer})
                 
+                # XP auslesen und gutschreiben
                 xp_matches = re.findall(r'\[\+(\d+)\s*XP\]', answer)
                 if xp_matches:
                     gewonnene_xp = sum(int(match) for match in xp_matches)
@@ -304,17 +313,21 @@ if student_answer := st.chat_input("Deine Antwort eingeben..."):
                         database[st.session_state.username]["xp"] = st.session_state.xp
                         st.success(f"Konto aktualisiert! +{gewonnene_xp} XP gutgeschrieben!")
                         st.balloons()
-                    
+                
+                # DIE NEUE SCHRANKE: Erst wenn die KI [WEITER] ausgibt, geht es zur nächsten Frage
+                if "[WEITER]" in answer:
                     time.sleep(3)
                     neue_frage = random.choice(gefilterte_fragen)
                     st.session_state.current_question = neue_frage
                     
                     next_text = f"Nächste Runde! 🚀 ({gewaehlter_foliensatz})\n\n### {neue_frage['Frage']}"
                     st.session_state.chat_history.append({"role": "assistant", "content": next_text})
-                    
-                    database[st.session_state.username]["history"] = st.session_state.chat_history
-                    database[st.session_state.username]["current_question"] = neue_frage
-                    save_data(database)
-                    st.rerun()
+                
+                # Speichern und neu laden
+                database[st.session_state.username]["history"] = st.session_state.chat_history
+                database[st.session_state.username]["current_question"] = st.session_state.current_question
+                save_data(database)
+                st.rerun()
+                
             except Exception as e:
                 st.error(f"❌ Server-Verbindungsfehler: {e}")
