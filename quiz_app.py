@@ -258,37 +258,33 @@ for msg in st.session_state.chat_history:
 
 q = st.session_state.current_question
 
-# NEU: Der Disclaimer über dem Eingabefeld
 st.markdown("<div style='text-align: center; font-size: 13px; color: #888; margin-top: 30px; margin-bottom: 5px;'>🐺 Wolf of Wüllnerstraße ist eine KI und kann Fehler machen. Bitte überprüfe wichtige Fakten.</div>", unsafe_allow_html=True)
 
 if student_answer := st.chat_input("Deine Antwort eingeben..."):
-    # Wir fügen die Antwort der Historie hinzu
     st.session_state.chat_history.append({"role": "user", "content": student_answer})
     with st.chat_message("user"): st.markdown(student_answer)
 
     with st.chat_message("assistant"):
         with st.spinner(f"{st.session_state.current_tutor} prüft deine Antwort..."):
             
-            # --- DER NEUE, HARTE ROLLENSPIEL- UND INTERAKTIONS-PROMPT ---
+            # --- DER NEUE, PERFEKTIONIERTE ROLLENSPIEL-PROMPT ---
             sys_text = f"""Du bist {st.session_state.current_tutor}, ein genialer, aber extrem charakterstarker Tutor für BWL. 
-            WICHTIGSTE REGEL: Du MUSST deine Rolle absolut übertrieben spielen! Nutze deinen typischen Slang, Floskeln und deine Persönlichkeit in JEDEM Satz. (Ein Jordan Belfort nutzt Wall-Street-Slang, redet über Geld, nennt den Studenten 'Rookie'. Ein Albert Einstein redet über das Universum, Physik und nennt ihn 'mein lieber Forscherfreund'). Verlass NIEMALS deine Rolle!
+            WICHTIGSTE REGEL: Du MUSST deine Rolle absolut übertrieben spielen! Nutze deinen typischen Slang, Floskeln und deine Persönlichkeit in JEDEM Satz (z.B. Jordan Belfort nennt Studenten 'Rookie', redet über Geld und Wall Street). Verlass NIEMALS deine Rolle!
 
             Du prüfst gerade folgende Frage:
             FRAGE: {q.get('Frage', '')}
             MUSTERANTWORT: {q.get('Musterantwort', '')}
 
             BEWERTUNGSREGELN (Sei kulant bei Grammatik, es geht um den inhaltlichen Sinn):
-            1. Komplett falsch: Beleidige den Studenten passend zu deiner Rolle, erkläre die korrekte Lösung, vergib [+0 XP] und schreibe GANZ AM ENDE das Wort [WEITER].
-            2. Teilweise richtig: Lobe ihn leicht in deiner Rolle, vergib Teilpunkte (z.B. [+10 XP]) und HAKE SPEZIFISCH NACH, was noch fehlt! Schreibe in diesem Fall NICHT das Wort [WEITER], damit der Student noch einmal antworten kann.
-            3. Perfekt beantwortet (oder fehlenden Rest nachgeliefert): Feiere ihn extrem ab, vergib die restlichen oder vollen Punkte (z.B. [+20 XP] oder [+10 XP]) und schreibe GANZ AM ENDE exakt das Wort [WEITER].
+            1. Antwort KOMPLETT FALSCH: Mach einen harten Spruch passend zu deiner Rolle, erkläre kurz den Denkfehler, vergib [+0 XP] und fordere ihn auf, es noch einmal zu probieren! Schreibe in diesem Fall KEIN [WEITER].
+            2. Antwort TEILWEISE RICHTIG: Lobe ihn leicht, vergib [+10 XP] und hake spezifisch nach, was noch fehlt! Schreibe KEIN [WEITER].
+            3. Der Student GIBT AUF (z.B. "weiß nicht", "keine Ahnung"): Erkläre die Lösung streng und herablassend, vergib [+0 XP] und schreibe GANZ AM ENDE exakt [WEITER].
+            4. Antwort PERFEKT (oder erfolgreich nachgebessert): Feiere ihn extrem ab, vergib [+20 XP] (oder [+10 XP] beim zweiten Versuch) und schreibe GANZ AM ENDE exakt das Wort [WEITER].
             
             Du MUSST die XP in jedem Fall in deiner Antwort exakt im Format [+X XP] ausgeben!
             """
             
-            # Wir übergeben Llama die Anweisungen UND die letzten Nachrichten für den Kontext
             groq_messages = [{"role": "system", "content": sys_text}]
-            
-            # Die letzten 6 Nachrichten des Chats mitsenden, damit die KI weiß, ob sie gerade nachgehakt hat!
             for msg in st.session_state.chat_history[-6:]:
                 groq_messages.append({"role": msg["role"], "content": msg["content"]})
             
@@ -299,12 +295,10 @@ if student_answer := st.chat_input("Deine Antwort eingeben..."):
                 )
                 answer = completion.choices[0].message.content
                 
-                # Wir filtern das [WEITER] für die Anzeige heraus, damit es unsichtbar für den Nutzer bleibt
                 display_answer = answer.replace("[WEITER]", "").strip()
                 st.markdown(display_answer)
                 st.session_state.chat_history.append({"role": "assistant", "content": answer})
                 
-                # XP auslesen und gutschreiben
                 xp_matches = re.findall(r'\[\+(\d+)\s*XP\]', answer)
                 if xp_matches:
                     gewonnene_xp = sum(int(match) for match in xp_matches)
@@ -314,7 +308,6 @@ if student_answer := st.chat_input("Deine Antwort eingeben..."):
                         st.success(f"Konto aktualisiert! +{gewonnene_xp} XP gutgeschrieben!")
                         st.balloons()
                 
-                # DIE NEUE SCHRANKE: Erst wenn die KI [WEITER] ausgibt, geht es zur nächsten Frage
                 if "[WEITER]" in answer:
                     time.sleep(3)
                     neue_frage = random.choice(gefilterte_fragen)
@@ -323,7 +316,6 @@ if student_answer := st.chat_input("Deine Antwort eingeben..."):
                     next_text = f"Nächste Runde! 🚀 ({gewaehlter_foliensatz})\n\n### {neue_frage['Frage']}"
                     st.session_state.chat_history.append({"role": "assistant", "content": next_text})
                 
-                # Speichern und neu laden
                 database[st.session_state.username]["history"] = st.session_state.chat_history
                 database[st.session_state.username]["current_question"] = st.session_state.current_question
                 save_data(database)
