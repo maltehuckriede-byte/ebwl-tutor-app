@@ -1,6 +1,5 @@
 import streamlit as st
 from groq import Groq
-from google.genai import types
 import os
 import json
 import random
