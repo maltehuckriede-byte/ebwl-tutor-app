@@ -14,12 +14,40 @@ GROQ_API_KEY = st.secrets.get("GROQ_API_KEY", "")
 client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
 
 # --- 2. DIE FAHRZEUG-DATENBANK ---
-# (HINWEIS: Füge hier zur Sicherheit nochmal deinen kompletten KARTEN_KATALOG mit allen 25 Fahrzeugen ein!)
+# WICHTIG: Füge hier wieder deinen kompletten KARTEN_KATALOG ein!
 KARTEN_KATALOG = {
-    "VW Golf VIII GTI": {"klasse": "C1", "staerke": "45", "kennzeichen": "GOLF-GTI", "rarity": "Common (Grau)", "daten": {"⚡ Leistung": "180 kW", "🕒 0-100": "6,2 s"}},
-    "BMW M3 Competition": {"klasse": "B1", "staerke": "80", "kennzeichen": "M3-COMP", "rarity": "Rare (Blau)", "daten": {"⚡ Leistung": "375 kW", "🕒 0-100": "3,9 s"}},
-    "Porsche 911 GT3": {"klasse": "S1", "staerke": "95", "kennzeichen": "GT3-992", "rarity": "Epic (Lila)", "daten": {"⚡ Leistung": "375 kW", "🕒 0-100": "3,4 s"}},
-    "Bugatti Chiron": {"klasse": "H1", "staerke": "100", "kennzeichen": "CHIRON", "rarity": "Legendary (Gold)", "daten": {"⚡ Leistung": "1103 kW", "🕒 0-100": "2,4 s"}}
+    # --- COMMON (GRAU) ---
+    "VW Golf VIII GTI": {"klasse": "C1", "staerke": "45", "kennzeichen": "GOLF-GTI", "rarity": "Common (Grau)", "daten": {"Modell": "GTI Performance", "⚡ Leistung": "180 kW (245 PS)", "🕒 0–100 km/h": "6,2 s", "🏁 V-Max": "250 km/h"}},
+    "Opel Corsa F Elektro": {"klasse": "D2", "staerke": "20", "kennzeichen": "CORSA-E", "rarity": "Common (Grau)", "daten": {"Modell": "Pre-Facelift 2021", "⚡ Leistung": "100 kW (136 PS)", "🔋 Reichweite": "330 km", "⚖️ Gewicht": "1.530 kg"}},
+    "Ford Fiesta ST": {"klasse": "C1", "staerke": "40", "kennzeichen": "FIESTA", "rarity": "Common (Grau)", "daten": {"Modell": "ST", "⚡ Leistung": "147 kW (200 PS)", "🕒 0–100 km/h": "6,5 s", "🏁 V-Max": "230 km/h"}},
+    "Toyota GR Yaris": {"klasse": "C1", "staerke": "55", "kennzeichen": "YARIS-GR", "rarity": "Common (Grau)", "daten": {"Modell": "Gazoo Racing", "⚡ Leistung": "192 kW (261 PS)", "⚙️ Antrieb": "Allrad (GR-FOUR)", "🕒 0–100 km/h": "5,5 s"}},
+    "Honda Civic Type R": {"klasse": "C1", "staerke": "65", "kennzeichen": "TYPE-R", "rarity": "Common (Grau)", "daten": {"Modell": "FL5", "⚡ Leistung": "242 kW (329 PS)", "🕒 0–100 km/h": "5,4 s", "🏁 V-Max": "275 km/h"}},
+    "Yamaha MT-07": {"klasse": "M1", "staerke": "30", "kennzeichen": "MT-07", "rarity": "Common (Grau)", "daten": {"Typ": "Naked Bike", "⚡ Leistung": "54 kW (73 PS)", "🕒 0–100 km/h": "3,8 s", "⚖️ Gewicht": "184 kg"}},
+    "Kawasaki Ninja 400": {"klasse": "M1", "staerke": "20", "kennzeichen": "NINJA400", "rarity": "Common (Grau)", "daten": {"Typ": "Supersport", "⚡ Leistung": "33 kW (45 PS)", "🕒 0–100 km/h": "4,8 s", "🏁 V-Max": "180 km/h"}},
+
+    # --- RARE (BLAU) ---
+    "BMW M3 Competition": {"klasse": "B1", "staerke": "80", "kennzeichen": "M3-COMP", "rarity": "Rare (Blau)", "daten": {"Modell": "G80", "⚡ Leistung": "375 kW (510 PS)", "🕒 0–100 km/h": "3,9 s", "🏁 V-Max": "290 km/h"}},
+    "Audi RS4 Avant": {"klasse": "B1", "staerke": "75", "kennzeichen": "RS4-AV", "rarity": "Rare (Blau)", "daten": {"Modell": "B9", "⚡ Leistung": "331 kW (450 PS)", "⚙️ Antrieb": "quattro", "🕒 0–100 km/h": "4,1 s"}},
+    "Mercedes-AMG C 63": {"klasse": "B1", "staerke": "80", "kennzeichen": "AMG-C63", "rarity": "Rare (Blau)", "daten": {"Modell": "W205 (V8)", "⚡ Leistung": "375 kW (510 PS)", "🕒 0–100 km/h": "4,0 s", "🔊 Motor": "4.0L V8 Biturbo"}},
+    "Tesla Model 3 Performance": {"klasse": "E1", "staerke": "85", "kennzeichen": "MODEL-3", "rarity": "Rare (Blau)", "daten": {"Modell": "Dual Motor", "⚡ Leistung": "393 kW (534 PS)", "🕒 0–100 km/h": "3,3 s", "🔋 Reichweite": "547 km"}},
+    "Kawasaki Z900": {"klasse": "M2", "staerke": "45", "kennzeichen": "Z-900", "rarity": "Rare (Blau)", "daten": {"Typ": "Naked Bike", "⚡ Leistung": "92 kW (125 PS)", "🕒 0–100 km/h": "3,2 s", "🏁 V-Max": "240 km/h"}},
+    "Ducati Monster": {"klasse": "M2", "staerke": "45", "kennzeichen": "MONSTER", "rarity": "Rare (Blau)", "daten": {"Typ": "Naked Bike", "⚡ Leistung": "82 kW (111 PS)", "🕒 0–100 km/h": "3,2 s", "⚖️ Gewicht": "188 kg"}},
+    "KTM 890 Duke R": {"klasse": "M2", "staerke": "50", "kennzeichen": "DUKE-890", "rarity": "Rare (Blau)", "daten": {"Typ": "Super Scalpel", "⚡ Leistung": "89 kW (121 PS)", "🕒 0–100 km/h": "3,0 s", "⚖️ Gewicht": "166 kg"}},
+
+    # --- EPIC (LILA) ---
+    "Porsche 911 GT3": {"klasse": "S1", "staerke": "95", "kennzeichen": "GT3-992", "rarity": "Epic (Lila)", "daten": {"Modell": "Generation 992", "⚡ Leistung": "375 kW (510 PS)", "🕒 0–100 km/h": "3,4 s", "🏁 V-Max": "318 km/h"}},
+    "Audi R8 V10": {"klasse": "S1", "staerke": "90", "kennzeichen": "R8-V10", "rarity": "Epic (Lila)", "daten": {"Modell": "Performance", "⚡ Leistung": "456 kW (620 PS)", "🕒 0–100 km/h": "3,1 s", "🏁 V-Max": "331 km/h"}},
+    "McLaren 720S": {"klasse": "S2", "staerke": "98", "kennzeichen": "MAC-720", "rarity": "Epic (Lila)", "daten": {"Modell": "Coupé", "⚡ Leistung": "530 kW (720 PS)", "🕒 0–100 km/h": "2,9 s", "🏁 V-Max": "341 km/h"}},
+    "Honda NC 700S (Custom)": {"klasse": "M1", "staerke": "50", "kennzeichen": "NC-700", "rarity": "Epic (Lila)", "daten": {"Typ": "Naked Bike", "⚡ Leistung": "35 kW (48 PS)", "⚙️ Drehmoment": "60 Nm", "📦 Feature": "Helmfach im Tank"}},
+    "BMW S 1000 RR": {"klasse": "M3", "staerke": "85", "kennzeichen": "S1000RR", "rarity": "Epic (Lila)", "daten": {"Typ": "Superbike", "⚡ Leistung": "154 kW (210 PS)", "🕒 0–100 km/h": "3,1 s", "🏁 V-Max": "303 km/h"}},
+    "Ducati Panigale V4": {"klasse": "M3", "staerke": "88", "kennzeichen": "PANI-V4", "rarity": "Epic (Lila)", "daten": {"Typ": "Superbike", "⚡ Leistung": "158 kW (215 PS)", "🕒 0–100 km/h": "3,0 s", "🏁 V-Max": "300 km/h"}},
+
+    # --- LEGENDARY (GOLD) ---
+    "Bugatti Chiron": {"klasse": "H1", "staerke": "100", "kennzeichen": "CHIRON", "rarity": "Legendary (Gold)", "daten": {"Modell": "W16", "⚡ Leistung": "1103 kW (1500 PS)", "🕒 0–100 km/h": "2,4 s", "🏁 V-Max": "420 km/h"}},
+    "Ferrari LaFerrari": {"klasse": "H1", "staerke": "99", "kennzeichen": "LAFERRARI", "rarity": "Legendary (Gold)", "daten": {"Modell": "F150", "⚡ Leistung": "708 kW (963 PS)", "🕒 0–100 km/h": "2,6 s", "🏁 V-Max": "350 km/h"}},
+    "Koenigsegg Jesko": {"klasse": "H1", "staerke": "100", "kennzeichen": "JESKO", "rarity": "Legendary (Gold)", "daten": {"Modell": "Attack", "⚡ Leistung": "1195 kW (1625 PS)", "🕒 0–100 km/h": "2,5 s", "🏁 V-Max": "480 km/h"}},
+    "Kawasaki Ninja H2R": {"klasse": "M4", "staerke": "100", "kennzeichen": "H2R", "rarity": "Legendary (Gold)", "daten": {"Typ": "Track-Only", "⚡ Leistung": "228 kW (310 PS)", "🕒 0–100 km/h": "2,6 s", "🏁 V-Max": "400 km/h"}},
+    "Ducati Superleggera V4": {"klasse": "M4", "staerke": "99", "kennzeichen": "SUPERLEG", "rarity": "Legendary (Gold)", "daten": {"Typ": "Limited", "⚡ Leistung": "165 kW (224 PS)", "⚖️ Gewicht": "159 kg (Trocken)", "🏁 V-Max": "300 km/h"}}
 }
 
 def get_image_base64(auto_name):
@@ -66,21 +94,39 @@ fragen_pool = load_questions()
 # Session State Init
 if "username" not in st.session_state: st.session_state.username = ""
 if "xp" not in st.session_state: st.session_state.xp = 0
+if "current_tutor" not in st.session_state: st.session_state.current_tutor = "Jordan Belfort"
 if "current_question" not in st.session_state: st.session_state.current_question = random.choice(fragen_pool)
 if "chat_history" not in st.session_state: st.session_state.chat_history = []
 
-# --- 4. LOGIN ---
+# --- 4. LOGIN (MIT PASSWORT & TUTOR WAHL) ---
 if not st.session_state.username:
-    st.title("🐺 Wolf of Wüllnerstraße - Quiz Edition")
-    new_user = st.text_input("Dein Name:")
-    if st.button("Starten"):
-        if new_user:
-            st.session_state.username = new_user
-            if new_user not in database:
-                database[new_user] = {"xp": 0, "inventory": []}
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.title("🐺 Wolf of Wüllnerstraße")
+        st.caption("🔒 QUIZ EDITION - CLOSED BETA")
+        st.markdown("---")
+        
+        new_user = st.text_input("Gib deinen Namen ein (z.B. Malte):")
+        tutor_choice = st.text_input("Name deines Tutors:", value="Jordan Belfort")
+        beta_code = st.text_input("Beta-Zugangscode:", type="password", help="Nur für autorisierte Tester.")
+        
+        if st.button("Lern-Session Starten", width="stretch"):
+            if beta_code != "PITCH2026": 
+                st.error("❌ Falscher Zugangscode! Diese Version ist nur für geladene Beta-Tester.")
+            elif not new_user:
+                st.error("Bitte gib einen Namen ein, um zu starten!")
+            else:
+                st.session_state.username = new_user
+                if new_user not in database:
+                    database[new_user] = {"xp": 0, "tutor_name": tutor_choice, "inventory": []}
+                else:
+                    database[new_user]["tutor_name"] = tutor_choice
+                    if "inventory" not in database[new_user]: database[new_user]["inventory"] = []
+                
                 save_data(database)
-            st.session_state.xp = database[new_user]["xp"]
-            st.rerun()
+                st.session_state.xp = database[new_user]["xp"]
+                st.session_state.current_tutor = tutor_choice 
+                st.rerun()
     st.stop()
 
 # --- 5. SEITENLEISTE: LOOTBOX MIT ANIMATION ---
@@ -95,7 +141,7 @@ with st.sidebar:
             database[st.session_state.username]["xp"] = st.session_state.xp
             save_data(database)
             
-            # --- DIE PACK OPENING ANIMATION ---
+            # Pack Opening Animation
             animation_box = st.empty()
             phasen = [
                 ("📦 Reiße das Booster-Pack auf...", "#9ca3af"),
@@ -107,7 +153,6 @@ with st.sidebar:
                 animation_box.markdown(f"<h3 style='text-align: center; color: {color};'>{text}</h3>", unsafe_allow_html=True)
                 time.sleep(0.7)
             animation_box.empty()
-            # -----------------------------------
             
             pool_leg = [k for k, v in KARTEN_KATALOG.items() if "Legendary" in v["rarity"]]
             pool_epi = [k for k, v in KARTEN_KATALOG.items() if "Epic" in v["rarity"]]
@@ -115,9 +160,9 @@ with st.sidebar:
             pool_com = [k for k, v in KARTEN_KATALOG.items() if "Common" in v["rarity"]]
             
             roll = random.randint(1, 100)
-            if roll <= 5: gezogenes_auto = random.choice(pool_leg)
-            elif roll <= 20: gezogenes_auto = random.choice(pool_epi)
-            elif roll <= 50: gezogenes_auto = random.choice(pool_rar)
+            if roll <= 5 and pool_leg: gezogenes_auto = random.choice(pool_leg)
+            elif roll <= 20 and pool_epi: gezogenes_auto = random.choice(pool_epi)
+            elif roll <= 50 and pool_rar: gezogenes_auto = random.choice(pool_rar)
             else: gezogenes_auto = random.choice(pool_com)
             
             database[st.session_state.username]["inventory"].append(gezogenes_auto)
@@ -126,15 +171,14 @@ with st.sidebar:
             st.success(f"Du hast gezogen: **{gezogenes_auto}**!")
             st.components.v1.html(render_card_html(gezogenes_auto), height=200)
             st.balloons()
-            
         else:
             st.error("Nicht genug XP! Beantworte erst Fragen.")
 
 # --- 6. QUIZ BEREICH ---
-st.title("📈 Jordan's EBWL Drill")
+st.title(f"📈 {st.session_state.current_tutor}'s EBWL Drill")
 
 q = st.session_state.current_question
-st.info(f"**Schwierigkeit:** {q['Schwierigkeitsgrad']}\n\n### ❓ Frage:\n{q['Frage']}")
+st.info(f"**Schwierigkeit:** {q.get('Schwierigkeitsgrad', 'Unbekannt')}\n\n### ❓ Frage:\n{q.get('Frage', 'Keine Frage gefunden')}")
 
 for msg in st.session_state.chat_history:
     with st.chat_message(msg["role"]): st.markdown(msg["content"])
@@ -144,44 +188,39 @@ if student_answer := st.chat_input("Deine Antwort..."):
     with st.chat_message("user"): st.markdown(student_answer)
 
     with st.chat_message("assistant"):
-        with st.spinner("Jordan bewertet deine Antwort..."):
+        with st.spinner(f"{st.session_state.current_tutor} bewertet deine Antwort..."):
             
-            system_prompt = """Du bist Jordan Belfort, Tutor für EBWL.
-            DEINE AUFGABE:
-            1. Bewerte die Antwort in deinem typischen Wall-Street-Slang. Sei streng, aber fair.
-            2. Wenn die Antwort komplett falsch ist, vergib [+0 XP].
-            3. Wenn sie teilweise richtig ist, vergib [+10 XP].
-            4. Wenn sie absolut perfekt ist, vergib [+20 XP].
-            Du MUSST die XP am Ende deiner Nachricht im Format [+X XP] schreiben!"""
+            # Sauber formatierter System Prompt ohne Einrückungs-Chaos
+            sys_text = f"Du bist {st.session_state.current_tutor}, Tutor für EBWL. Bewerte die folgende Studentenantwort im passenden Slang. Wenn komplett falsch: [+0 XP]. Wenn teilweise richtig: [+10 XP]. Wenn perfekt: [+20 XP]. Du MUSST die XP am Ende im Format [+X XP] schreiben!"
             
-            user_prompt = f"""Hier sind die Daten für die Bewertung:
-            FRAGE: {q['Frage']}
-            MUSTERANTWORT: {q['Musterantwort']}
-            STUDENTENANTWORT: {student_answer}"""
+            usr_text = f"FRAGE: {q.get('Frage', '')}\nMUSTERANTWORT: {q.get('Musterantwort', '')}\nSTUDENTENANTWORT: {student_answer}"
             
-            completion = client.chat.completions.create(
-                model="llama3-8b-8192",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ]
-            )
-            
-            answer = completion.choices[0].message.content
-            st.markdown(answer)
-            st.session_state.chat_history.append({"role": "assistant", "content": answer})
-            
-            xp_matches = re.findall(r'\[\+(\d+)\s*XP\]', answer)
-            if xp_matches:
-                gewonnene_xp = sum(int(match) for match in xp_matches)
-                if gewonnene_xp > 0:
-                    st.session_state.xp += gewonnene_xp
-                    database[st.session_state.username]["xp"] = st.session_state.xp
-                    save_data(database)
-                    st.success(f"BÄÄM! {gewonnene_xp} XP verdient!")
-                    st.balloons()
+            try:
+                completion = client.chat.completions.create(
+                    model="llama3-8b-8192",
+                    messages=[
+                        {"role": "system", "content": sys_text},
+                        {"role": "user", "content": usr_text}
+                    ]
+                )
                 
-                time.sleep(4)
-                st.session_state.current_question = random.choice(fragen_pool)
-                st.session_state.chat_history = [] 
-                st.rerun()
+                answer = completion.choices[0].message.content
+                st.markdown(answer)
+                st.session_state.chat_history.append({"role": "assistant", "content": answer})
+                
+                xp_matches = re.findall(r'\[\+(\d+)\s*XP\]', answer)
+                if xp_matches:
+                    gewonnene_xp = sum(int(match) for match in xp_matches)
+                    if gewonnene_xp > 0:
+                        st.session_state.xp += gewonnene_xp
+                        database[st.session_state.username]["xp"] = st.session_state.xp
+                        save_data(database)
+                        st.success(f"BÄÄM! {gewonnene_xp} XP verdient!")
+                        st.balloons()
+                    
+                    time.sleep(4)
+                    st.session_state.current_question = random.choice(fragen_pool)
+                    st.session_state.chat_history = [] 
+                    st.rerun()
+            except Exception as e:
+                st.error(f"❌ API Fehler: {e}")
