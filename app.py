@@ -1,5 +1,5 @@
 import streamlit as st
-from google import genai
+from groq import Groq
 from google.genai import types
 import os
 import json
@@ -8,9 +8,8 @@ import re
 import base64
 
 # --- 1. SETUP & API ---
-GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
-client = genai.Client(api_key=GOOGLE_API_KEY)
-
+GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
+client = Groq(api_key=GROQ_API_KEY)
 st.set_page_config(page_title="Wolf of Wüllnerstraße", page_icon="🐺", layout="wide")
 
 # --- 2. DIE RIESIGE FAHRZEUG-DATENBANK ---
@@ -325,27 +324,40 @@ if prompt := st.chat_input(f"Frag deinen Tutor {st.session_state.current_tutor}.
             st.warning("Bitte lege zuerst ein PDF in 'studienmaterial' ab!")
         else:
             spinner_text = f"{st.session_state.current_tutor} analysiert... | 💡 {random.choice(LADE_ZITATE)}"
-            with st.spinner(spinner_text):
-                try:
-                    history_for_api = [msg["content"] for msg in st.session_state.messages]
-                    full_contents = backend_files + history_for_api
+        with st.spinner(spinner_text):
+            try:
+                # 1. System-Prompt und Chat-Historie für Groq zusammenbauen
+                groq_messages = [
+                    {"role": "system", "content": f"Du bist {st.session_state.current_tutor}. Antworte im passenden Stil und vergib für gute Antworten XP in dem Format [+10 XP]."}
+                ]
+                
+                # Die gesamte bisherige Konversation hinzufügen
+                for msg in st.session_state.messages:
+                    groq_messages.append({"role": msg["role"], "content": msg["content"]})
+
+                # 2. Die blitzschnelle Anfrage an Groq (Llama 3)
+                completion = client.chat.completions.create(
+                    model="llama3-8b-8192", 
+                    messages=groq_messages
+                )
+                
+                # 3. Die Antwort sauber auslesen
+                answer = completion.choices[0].message.content
+                
+                # 4. Antwort anzeigen und in der Historie speichern
+                st.markdown(answer)
+                st.session_state.messages.append({"role": "assistant", "content": answer})
+                
+                # 5. Die altbekannte XP-Logik
+                xp_matches = re.findall(r'\[\+(\d+)\s*XP\]', answer)
+                if xp_matches:
+                    total_gained_xp = sum(int(match) for match in xp_matches)
+                    st.session_state.xp += total_gained_xp
+                    database[st.session_state.username]["xp"] = st.session_state.xp
+                    st.balloons()
                     
-                    response = client.models.generate_content(
-                        model='gemini-2.5-flash',
-                        contents=full_contents,
-                        config=types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT)
-                    )
-                    
-                    answer = response.text
-                    st.markdown(answer)
-                    st.session_state.messages.append({"role": "assistant", "content": answer})
-                    
-                    xp_matches = re.findall(r'\[\+(\d+)\s*XP\]', answer)
-                    if xp_matches:
-                        total_gained_xp = sum(int(match) for match in xp_matches)
-                        st.session_state.xp += total_gained_xp
-                        database[st.session_state.username]["xp"] = st.session_state.xp
-                        st.balloons()
+            except Exception as e:
+                st.error(f"❌ Fehler bei der API-Anfrage: {e}")
                         
                     database[st.session_state.username]["history"] = st.session_state.messages
                     save_data(database)
