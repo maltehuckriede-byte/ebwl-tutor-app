@@ -14,7 +14,7 @@ GROQ_API_KEY = st.secrets.get("GROQ_API_KEY", "")
 client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
 
 # --- 2. DIE FAHRZEUG-DATENBANK ---
-# WICHTIG: Füge hier deinen kompletten KARTEN_KATALOG mit allen 25 Fahrzeugen ein!
+# WICHTIG: Füge hier deinen kompletten KARTEN_KATALOG mit allen Fahrzeugen ein!
 KARTEN_KATALOG = {
     # --- COMMON (GRAU) ---
     "VW Golf VIII GTI": {"klasse": "C1", "staerke": "45", "kennzeichen": "GOLF-GTI", "rarity": "Common (Grau)", "daten": {"Modell": "GTI Performance", "⚡ Leistung": "180 kW (245 PS)", "🕒 0–100 km/h": "6,2 s", "🏁 V-Max": "250 km/h"}},
@@ -49,6 +49,7 @@ KARTEN_KATALOG = {
     "Kawasaki Ninja H2R": {"klasse": "M4", "staerke": "100", "kennzeichen": "H2R", "rarity": "Legendary (Gold)", "daten": {"Typ": "Track-Only", "⚡ Leistung": "228 kW (310 PS)", "🕒 0–100 km/h": "2,6 s", "🏁 V-Max": "400 km/h"}},
     "Ducati Superleggera V4": {"klasse": "M4", "staerke": "99", "kennzeichen": "SUPERLEG", "rarity": "Legendary (Gold)", "daten": {"Typ": "Limited", "⚡ Leistung": "165 kW (224 PS)", "⚖️ Gewicht": "159 kg (Trocken)", "🏁 V-Max": "300 km/h"}}
 }
+
 def get_image_base64(auto_name):
     moegliche_dateien = [(f"karten/{auto_name}.png", "image/png"), (f"karten/{auto_name}.jpg", "image/jpeg"), (f"karten/{auto_name}.jpeg", "image/jpeg")]
     for datei_pfad, mime_type in moegliche_dateien:
@@ -57,21 +58,50 @@ def get_image_base64(auto_name):
                 return f"data:{mime_type};base64,{base64.b64encode(img_file.read()).decode()}"
     return ""
 
+# HIER IST WIEDER DAS VOLLE, GEILE KARTEN-DESIGN:
 def render_card_html(auto_name):
     info = KARTEN_KATALOG.get(auto_name)
     if not info: return ""
     bild_url = get_image_base64(auto_name)
-    bild_html = f'<img src="{bild_url}" style="width: 100%; height: 100%; object-fit: cover;">' if bild_url else '🏎️'
-    bg_color = "#fefce8" if "Legendary" in info['rarity'] else "#faf5ff" if "Epic" in info['rarity'] else "#eff6ff" if "Rare" in info['rarity'] else "#f3f4f6"
     
+    if not bild_url:
+        bild_html = f'<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:50px; background: #e2eaf3;">🏎️</div>'
+    else:
+        bild_html = f'<img src="{bild_url}" style="width: 100%; height: 100%; object-fit: cover;">'
+        
+    tabellen_rows = "".join([f"<tr><td style='padding: 4px 8px; border-bottom: 1px solid #eee; color: #333;'>{k}</td><td style='padding: 4px 8px; text-align: right; font-weight: bold; border-bottom: 1px solid #eee; color: #111;'>{v}</td></tr>" for k, v in info['daten'].items()])
+
+    if "Legendary" in info['rarity']:
+        main_color, dark_color, bg_color = "#eab308", "#422006", "#fefce8"
+    elif "Epic" in info['rarity']:
+        main_color, dark_color, bg_color = "#a855f7", "#3b0764", "#faf5ff"
+    elif "Rare" in info['rarity']:
+        main_color, dark_color, bg_color = "#3b82f6", "#172554", "#eff6ff"
+    else: 
+        main_color, dark_color, bg_color = "#9ca3af", "#1f2937", "#f3f4f6"
+
     return f"""
-    <div style="width: 270px; border-radius: 14px; overflow: hidden; background: {bg_color}; border: 3px solid #333; margin-bottom: 15px;">
-        <div style="background: #111; color: white; padding: 8px; text-align: center; font-weight: bold;">{auto_name} - {info['rarity']}</div>
-        <div style="height: 150px; background: #ddd; display: flex; align-items: center; justify-content: center; font-size: 40px;">{bild_html}</div>
+    <style>body {{ margin: 0; padding: 0; overflow: hidden; background-color: transparent; }} ::-webkit-scrollbar {{ display: none; }}</style>
+    <div style="width: 270px; border-radius: 14px; overflow: hidden; background: {bg_color}; font-family: Arial, sans-serif; border: 3px solid {main_color}; margin-bottom: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.25);">
+        <div style="background: {dark_color}; color: white; padding: 8px; text-align: center; font-size: 11px; font-weight: 900; letter-spacing: 1.5px; border-bottom: 2px solid {main_color};">⚡ WOLF OF WÜLLNERSTRASSE ⚡</div>
+        <div style="display: flex; align-items: center; padding: 10px 8px; gap: 8px;">
+            <div style="width: 34px; height: 34px; border-radius: 50%; background: white; border: 2px solid {dark_color}; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; color: {dark_color}; box-shadow: 0 2px 5px rgba(0,0,0,0.15);">{info['klasse']}</div>
+            <div style="flex: 1; height: 130px; border-radius: 8px; overflow: hidden; position: relative; border: 2px solid {dark_color}; box-shadow: inset 0 0 10px rgba(0,0,0,0.2);">{bild_html}
+                <div style="position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%); background: white; border: 1.5px solid {dark_color}; border-radius: 4px; padding: 2px 8px; font-size: 9px; font-weight: 900; color: #111; letter-spacing: 1px; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.4);">{info['kennzeichen']}</div>
+            </div>
+            <div style="width: 34px; height: 34px; border-radius: 50%; background: white; border: 2px solid {main_color}; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 900; color: {main_color}; box-shadow: 0 2px 5px rgba(0,0,0,0.15); text-shadow: 0px 0px 2px {main_color}44;">{info['staerke']}</div>
+        </div>
+        <div style="text-align: center; padding: 8px; background: {dark_color}; color: white; border-top: 2px solid {main_color}; border-bottom: 2px solid {main_color};">
+            <div style="font-weight: 900; font-size: 15px; letter-spacing: 0.5px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">{auto_name}</div>
+            <div style="font-size: 10px; font-weight: 800; color: {main_color}; text-transform: uppercase; margin-top: 3px; letter-spacing: 1px;">{info['rarity']}</div>
+        </div>
+        <div style="padding: 8px;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px; background: white; border-radius: 6px; overflow: hidden; border: 1px solid #ddd; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">{tabellen_rows}</table>
+        </div>
     </div>
     """
 
-# --- 3. SAVEGAMES & FRAGEN LADEN (Präzise Foliensatz-Sortierung) ---
+# --- 3. SAVEGAMES & FRAGEN LADEN ---
 DATA_FILE = "savegames.json"
 def load_data():
     if os.path.exists(DATA_FILE):
@@ -87,21 +117,13 @@ def load_questions():
         with open("fragen.json", "r", encoding="utf-8") as f: 
             fragen = json.load(f)
             total_q = len(fragen)
-            
-            # Exakte mathematische Zuordnung deiner Blöcke
             for i, q in enumerate(fragen):
-                if i < 30: 
-                    q["Foliensatz"] = "Foliensatz 01"
-                elif i < 60: 
-                    q["Foliensatz"] = "Foliensatz 02"
-                elif i < 80: 
-                    q["Foliensatz"] = "Foliensatz 02 Geldumschlag"
-                elif i < 110: 
-                    q["Foliensatz"] = "Foliensatz 03"
-                elif i >= total_q - 5: 
-                    q["Foliensatz"] = "Foliensatz 12 Andlerformel"
+                if i < 30: q["Foliensatz"] = "Foliensatz 01"
+                elif i < 60: q["Foliensatz"] = "Foliensatz 02"
+                elif i < 80: q["Foliensatz"] = "Foliensatz 02 Geldumschlag"
+                elif i < 110: q["Foliensatz"] = "Foliensatz 03"
+                elif i >= total_q - 5: q["Foliensatz"] = "Foliensatz 12 Andlerformel"
                 else:
-                    # Alle weiteren Fragen in 30er Schritten aufteilen
                     block_index = (i - 110) // 30
                     current_fs = 4 + block_index
                     q["Foliensatz"] = f"Foliensatz {current_fs:02d}"
@@ -111,7 +133,6 @@ def load_questions():
 database = load_data()
 fragen_pool = load_questions()
 
-# Session State Init
 if "username" not in st.session_state: st.session_state.username = ""
 if "xp" not in st.session_state: st.session_state.xp = 0
 if "current_tutor" not in st.session_state: st.session_state.current_tutor = "Jordan Belfort"
@@ -122,11 +143,8 @@ if "current_question" not in st.session_state: st.session_state.current_question
 if not st.session_state.username:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        # Greift direkt auf dein hochgeladenes GitHub-Logo zu
-        if os.path.exists("logo.png"):
-            st.image("logo.png")
-        else:
-            st.markdown("<h1 style='text-align: center; font-size: 80px;'>🐺</h1>", unsafe_allow_html=True)
+        if os.path.exists("logo.png"): st.image("logo.png")
+        else: st.markdown("<h1 style='text-align: center; font-size: 80px;'>🐺</h1>", unsafe_allow_html=True)
             
         st.title("Wolf of Wüllnerstraße")
         st.caption("🔒 QUIZ EDITION - CLOSED BETA")
@@ -137,35 +155,64 @@ if not st.session_state.username:
         beta_code = st.text_input("Beta-Zugangscode:", type="password")
         
         if st.button("Lern-Session Starten", width="stretch"):
-            if beta_code != "PITCH2026": 
-                st.error("❌ Falscher Zugangscode!")
-            elif not new_user:
-                st.error("Bitte gib einen Namen ein!")
+            if beta_code != "PITCH2026": st.error("❌ Falscher Zugangscode!")
+            elif not new_user: st.error("Bitte gib einen Namen ein!")
             else:
                 st.session_state.username = new_user
-                if new_user not in database:
-                    database[new_user] = {"xp": 0, "tutor_name": tutor_choice, "inventory": [], "history": [], "current_question": None}
-                else:
-                    database[new_user]["tutor_name"] = tutor_choice
-                
+                if new_user not in database: database[new_user] = {"xp": 0, "tutor_name": tutor_choice, "inventory": [], "history": [], "current_question": None}
+                else: database[new_user]["tutor_name"] = tutor_choice
                 save_data(database)
                 st.session_state.xp = database[new_user].get("xp", 0)
                 st.session_state.current_tutor = tutor_choice 
-                
-                # Lade persistenten Zustand aus dem Savegame
                 st.session_state.chat_history = database[new_user].get("history", [])
                 st.session_state.current_question = database[new_user].get("current_question", None)
                 st.rerun()
     st.stop()
 
-# --- 5. SEITENLEISTE (Themenauswahl & Garage) ---
+# --- 5. POP-UP ANIMATION FÜR DIE LOOTBOX ---
+@st.dialog("🎁 Epischer Loot-Drop!", width="small")
+def show_lootbox_popup():
+    animation_box = st.empty()
+    phasen = [
+        ("📦 Reiße das Booster-Pack auf...", "#9ca3af"),
+        ("⚡ Scanne Fahrzeugdaten...", "#3b82f6"),
+        ("🔥 Berechne Rarity...", "#a855f7"),
+        ("✨ BÄÄM! Das ist dein Pull!", "#eab308")
+    ]
+    for text, color in phasen:
+        animation_box.markdown(f"<h3 style='text-align: center; color: {color};'>{text}</h3>", unsafe_allow_html=True)
+        time.sleep(0.8)
+    animation_box.empty()
+    
+    pool_leg = [k for k, v in KARTEN_KATALOG.items() if "Legendary" in v["rarity"]]
+    pool_epi = [k for k, v in KARTEN_KATALOG.items() if "Epic" in v["rarity"]]
+    pool_rar = [k for k, v in KARTEN_KATALOG.items() if "Rare" in v["rarity"]]
+    pool_com = [k for k, v in KARTEN_KATALOG.items() if "Common" in v["rarity"]]
+    
+    roll = random.randint(1, 100)
+    if roll <= 5 and pool_leg: auto = random.choice(pool_leg)
+    elif roll <= 20 and pool_epi: auto = random.choice(pool_epi)
+    elif roll <= 50 and pool_rar: auto = random.choice(pool_rar)
+    else: auto = random.choice(pool_com)
+    
+    database[st.session_state.username]["inventory"].append(auto)
+    save_data(database)
+    
+    st.success(f"Herzlichen Glückwunsch! Du hast **{auto}** gezogen!")
+    
+    # Zentrierte Darstellung der großen Karte im Pop-Up
+    col1, col2, col3 = st.columns([0.5, 3, 0.5])
+    with col2:
+        st.components.v1.html(render_card_html(auto), height=460)
+        
+    st.balloons()
+    if st.button("Ab in die Garage 🏁", width="stretch"):
+        st.rerun()
+
+# --- 6. SEITENLEISTE ---
 with st.sidebar:
     st.title("📚 Themenauswahl")
-    
-    # Alle verfügbaren Foliensätze aus der sortierten Datenbank holen
     alle_foliensaetze = sorted(list(set([q["Foliensatz"] for q in fragen_pool])))
-    
-    # Standardmäßig den Foliensatz der aktuellen Frage auswählen
     default_idx = 0
     if st.session_state.current_question and st.session_state.current_question["Foliensatz"] in alle_foliensaetze:
         default_idx = alle_foliensaetze.index(st.session_state.current_question["Foliensatz"])
@@ -173,19 +220,14 @@ with st.sidebar:
     gewaehlter_foliensatz = st.selectbox("Aktueller Foliensatz:", alle_foliensaetze, index=default_idx)
     gefilterte_fragen = [q for q in fragen_pool if q["Foliensatz"] == gewaehlter_foliensatz]
     
-    # Weiche bei manuellem Themenwechsel oder erstem Start
-    if "last_foliensatz" not in st.session_state:
-        st.session_state.last_foliensatz = gewaehlter_foliensatz
+    if "last_foliensatz" not in st.session_state: st.session_state.last_foliensatz = gewaehlter_foliensatz
 
     if gewaehlter_foliensatz != st.session_state.last_foliensatz or st.session_state.current_question is None:
         st.session_state.last_foliensatz = gewaehlter_foliensatz
         neue_frage = random.choice(gefilterte_fragen)
         st.session_state.current_question = neue_frage
-        
-        # Frage formmatieren und direkt in den Chat posten
         willkommens_text = f"🏁 **Themenblock: {gewaehlter_foliensatz}**\n\nHier ist deine Aufgabe (Schwierigkeit: {neue_frage.get('Schwierigkeitsgrad', 'Mittel')}):\n### {neue_frage['Frage']}"
         st.session_state.chat_history.append({"role": "assistant", "content": willkommens_text})
-        
         database[st.session_state.username]["history"] = st.session_state.chat_history
         database[st.session_state.username]["current_question"] = neue_frage
         save_data(database)
@@ -201,37 +243,24 @@ with st.sidebar:
             st.session_state.xp -= 30 
             database[st.session_state.username]["xp"] = st.session_state.xp
             save_data(database)
-            
-            # Pack Opening Animation
-            animation_box = st.empty()
-            for text, color in [("📦 Öffne Pack...", "#9ca3af"), ("⚡ Scanne Klasse...", "#3b82f6"), ("🔥 Überprüfe Rarity...", "#a855f7")]:
-                animation_box.markdown(f"<h3 style='text-align: center; color: {color};'>{text}</h3>", unsafe_allow_html=True)
-                time.sleep(0.7)
-            animation_box.empty()
-            
-            pool_leg = [k for k, v in KARTEN_KATALOG.items() if "Legendary" in v["rarity"]]
-            pool_epi = [k for k, v in KARTEN_KATALOG.items() if "Epic" in v["rarity"]]
-            pool_rar = [k for k, v in KARTEN_KATALOG.items() if "Rare" in v["rarity"]]
-            pool_com = [k for k, v in KARTEN_KATALOG.items() if "Common" in v["rarity"]]
-            
-            roll = random.randint(1, 100)
-            if roll <= 5 and pool_leg: auto = random.choice(pool_leg)
-            elif roll <= 20 and pool_epi: auto = random.choice(pool_epi)
-            elif roll <= 50 and pool_rar: auto = random.choice(pool_rar)
-            else: auto = random.choice(pool_com)
-            
-            database[st.session_state.username]["inventory"].append(auto)
-            save_data(database)
-            st.success(f"Gezogen: **{auto}**!")
-            st.components.v1.html(render_card_html(auto), height=200)
-            st.balloons()
+            # Öffnet das zentrale Pop-Up Fenster!
+            show_lootbox_popup()
         else:
             st.error("Nicht genug XP!")
+            
+    with st.expander("📚 Dein Sammelalbum", expanded=True):
+        inventar = database[st.session_state.username].get("inventory", [])
+        if not inventar:
+            st.info("Deine Garage ist noch leer.")
+        else:
+            karten_counts = {karte: inventar.count(karte) for karte in set(inventar)}
+            for karte, anzahl in karten_counts.items():
+                st.write(f"**Anzahl: {anzahl}x**")
+                st.components.v1.html(render_card_html(karte), height=460)
 
-# --- 6. CHAT OBERFLÄCHE ---
+# --- 7. CHAT OBERFLÄCHE ---
 st.title(f"📈 {st.session_state.current_tutor}'s Quiz-Drill")
 
-# Kontinuierliche Anzeige des Chatverlaufs
 for msg in st.session_state.chat_history:
     with st.chat_message(msg["role"]): st.markdown(msg["content"])
 
@@ -244,11 +273,18 @@ if student_answer := st.chat_input("Deine Antwort eingeben..."):
     with st.chat_message("assistant"):
         with st.spinner(f"{st.session_state.current_tutor} prüft deine Antwort..."):
             
-            sys_text = f"Du bist {st.session_state.current_tutor}, ein genialer und fordernder Tutor für EBWL. Bewerte die Antwort im passenden Slang. Komplett falsch: [+0 XP]. Teilweise richtig: [+10 XP]. Perfekt beantwortet: [+20 XP]. Du MUSST die XP am Ende exakt im Format [+X XP] ausgeben!"
+            # Der kulante System Prompt!
+            sys_text = f"""Du bist {st.session_state.current_tutor}, ein genialer Tutor für EBWL. 
+            Bewerte die Antwort im passenden Slang. 
+            WICHTIG: Sei kulant! Es geht rein um den inhaltlichen Sinn und die Fakten, nicht um exakte Formatierung oder Rechtschreibung.
+            - Komplett falsch: [+0 XP]
+            - Teilweise richtig: [+10 XP]
+            - Inhaltlich richtig (Kernfakten getroffen): [+20 XP]
+            Du MUSST die XP am Ende exakt im Format [+X XP] ausgeben!"""
+            
             usr_text = f"KAPITEL: {q.get('Foliensatz', '')}\nFRAGE: {q.get('Frage', '')}\nMUSTERANTWORT: {q.get('Musterantwort', '')}\nSTUDENTENANTWORT: {student_answer}"
             
             try:
-                # Das brandneue Llama 3.3 Versatile Triebwerk
                 completion = client.chat.completions.create(
                     model="llama-3.3-70b-versatile",
                     messages=[
@@ -256,12 +292,10 @@ if student_answer := st.chat_input("Deine Antwort eingeben..."):
                         {"role": "user", "content": usr_text}
                     ]
                 )
-                
                 answer = completion.choices[0].message.content
                 st.markdown(answer)
                 st.session_state.chat_history.append({"role": "assistant", "content": answer})
                 
-                # XP-Zuweisung auslesen
                 xp_matches = re.findall(r'\[\+(\d+)\s*XP\]', answer)
                 if xp_matches:
                     gewonnene_xp = sum(int(match) for match in xp_matches)
@@ -271,7 +305,6 @@ if student_answer := st.chat_input("Deine Antwort eingeben..."):
                         st.success(f"Konto aktualisiert! +{gewonnene_xp} XP gutgeschrieben!")
                         st.balloons()
                     
-                    # Nächste zufällige Frage aus demselben Foliensatz ziehen
                     time.sleep(3)
                     neue_frage = random.choice(gefilterte_fragen)
                     st.session_state.current_question = neue_frage
@@ -279,11 +312,9 @@ if student_answer := st.chat_input("Deine Antwort eingeben..."):
                     next_text = f"Nächste Runde! 🚀 ({gewaehlter_foliensatz})\n\n### {neue_frage['Frage']}"
                     st.session_state.chat_history.append({"role": "assistant", "content": next_text})
                     
-                    # Alles im Savegame sichern
                     database[st.session_state.username]["history"] = st.session_state.chat_history
                     database[st.session_state.username]["current_question"] = neue_frage
                     save_data(database)
-                    
                     st.rerun()
             except Exception as e:
                 st.error(f"❌ Server-Verbindungsfehler: {e}")
