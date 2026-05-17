@@ -359,13 +359,5 @@ if prompt := st.chat_input(f"Frag deinen Tutor {st.session_state.current_tutor}.
             except Exception as e:
                 st.error(f"❌ Fehler bei der API-Anfrage: {e}")
                         
-                    database[st.session_state.username]["history"] = st.session_state.messages
-                    save_data(database)
-                    
-                    if xp_matches:
-                        import time
-                        time.sleep(2)
-                        st.rerun()
-                        
-                except Exception as e:
-                    st.error(f"Fehler: {e}")
+        database[st.session_state.username]["history"] = st.session_state.messages
+        save_data(database)
