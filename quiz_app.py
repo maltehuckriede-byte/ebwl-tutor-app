@@ -8,13 +8,13 @@ import time
 import base64
 
 # --- 1. SETUP & API ---
-st.set_page_config(page_title="Wolf of Wüllnerstraße - Quiz Edition", page_icon="🐺", layout="wide")
+st.set_page_config(page_title="Wolf of Wüllnerstraße - Quiz", page_icon="🐺", layout="wide")
 
 GROQ_API_KEY = st.secrets.get("GROQ_API_KEY", "")
 client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
 
 # --- 2. DIE FAHRZEUG-DATENBANK ---
-# WICHTIG: Füge hier wieder deinen kompletten KARTEN_KATALOG ein!
+# WICHTIG: Füge hier deinen kompletten KARTEN_KATALOG mit allen 25 Fahrzeugen ein!
 KARTEN_KATALOG = {
     # --- COMMON (GRAU) ---
     "VW Golf VIII GTI": {"klasse": "C1", "staerke": "45", "kennzeichen": "GOLF-GTI", "rarity": "Common (Grau)", "daten": {"Modell": "GTI Performance", "⚡ Leistung": "180 kW (245 PS)", "🕒 0–100 km/h": "6,2 s", "🏁 V-Max": "250 km/h"}},
@@ -49,7 +49,6 @@ KARTEN_KATALOG = {
     "Kawasaki Ninja H2R": {"klasse": "M4", "staerke": "100", "kennzeichen": "H2R", "rarity": "Legendary (Gold)", "daten": {"Typ": "Track-Only", "⚡ Leistung": "228 kW (310 PS)", "🕒 0–100 km/h": "2,6 s", "🏁 V-Max": "400 km/h"}},
     "Ducati Superleggera V4": {"klasse": "M4", "staerke": "99", "kennzeichen": "SUPERLEG", "rarity": "Legendary (Gold)", "daten": {"Typ": "Limited", "⚡ Leistung": "165 kW (224 PS)", "⚖️ Gewicht": "159 kg (Trocken)", "🏁 V-Max": "300 km/h"}}
 }
-
 def get_image_base64(auto_name):
     moegliche_dateien = [(f"karten/{auto_name}.png", "image/png"), (f"karten/{auto_name}.jpg", "image/jpeg"), (f"karten/{auto_name}.jpeg", "image/jpeg")]
     for datei_pfad, mime_type in moegliche_dateien:
@@ -72,7 +71,7 @@ def render_card_html(auto_name):
     </div>
     """
 
-# --- 3. SAVEGAMES & FRAGEN LADEN ---
+# --- 3. SAVEGAMES & FRAGEN LADEN (Präzise Foliensatz-Sortierung) ---
 DATA_FILE = "savegames.json"
 def load_data():
     if os.path.exists(DATA_FILE):
@@ -85,8 +84,29 @@ def save_data(data):
 @st.cache_data
 def load_questions():
     if os.path.exists("fragen.json"):
-        with open("fragen.json", "r", encoding="utf-8") as f: return json.load(f)
-    return [{"Frage": "Fehler: fragen.json nicht gefunden!", "Musterantwort": "Erstelle die Datei.", "Schwierigkeitsgrad": "Leicht"}]
+        with open("fragen.json", "r", encoding="utf-8") as f: 
+            fragen = json.load(f)
+            total_q = len(fragen)
+            
+            # Exakte mathematische Zuordnung deiner Blöcke
+            for i, q in enumerate(fragen):
+                if i < 30: 
+                    q["Foliensatz"] = "Foliensatz 01"
+                elif i < 60: 
+                    q["Foliensatz"] = "Foliensatz 02"
+                elif i < 80: 
+                    q["Foliensatz"] = "Foliensatz 02 Geldumschlag"
+                elif i < 110: 
+                    q["Foliensatz"] = "Foliensatz 03"
+                elif i >= total_q - 5: 
+                    q["Foliensatz"] = "Foliensatz 12 Andlerformel"
+                else:
+                    # Alle weiteren Fragen in 30er Schritten aufteilen
+                    block_index = (i - 110) // 30
+                    current_fs = 4 + block_index
+                    q["Foliensatz"] = f"Foliensatz {current_fs:02d}"
+            return fragen
+    return [{"Frage": "Fehler: fragen.json fehlt!", "Musterantwort": "Bitte hochladen.", "Schwierigkeitsgrad": "Leicht", "Foliensatz": "Fehler"}]
 
 database = load_data()
 fragen_pool = load_questions()
@@ -95,44 +115,85 @@ fragen_pool = load_questions()
 if "username" not in st.session_state: st.session_state.username = ""
 if "xp" not in st.session_state: st.session_state.xp = 0
 if "current_tutor" not in st.session_state: st.session_state.current_tutor = "Jordan Belfort"
-if "current_question" not in st.session_state: st.session_state.current_question = random.choice(fragen_pool)
 if "chat_history" not in st.session_state: st.session_state.chat_history = []
+if "current_question" not in st.session_state: st.session_state.current_question = None
 
-# --- 4. LOGIN (MIT PASSWORT & TUTOR WAHL) ---
+# --- 4. STARTBILDSCHIRM & LOGIN ---
 if not st.session_state.username:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.title("🐺 Wolf of Wüllnerstraße")
+        # Greift direkt auf dein hochgeladenes GitHub-Logo zu
+        if os.path.exists("logo.png"):
+            st.image("logo.png")
+        else:
+            st.markdown("<h1 style='text-align: center; font-size: 80px;'>🐺</h1>", unsafe_allow_html=True)
+            
+        st.title("Wolf of Wüllnerstraße")
         st.caption("🔒 QUIZ EDITION - CLOSED BETA")
         st.markdown("---")
         
         new_user = st.text_input("Gib deinen Namen ein (z.B. Malte):")
         tutor_choice = st.text_input("Name deines Tutors:", value="Jordan Belfort")
-        beta_code = st.text_input("Beta-Zugangscode:", type="password", help="Nur für autorisierte Tester.")
+        beta_code = st.text_input("Beta-Zugangscode:", type="password")
         
         if st.button("Lern-Session Starten", width="stretch"):
             if beta_code != "PITCH2026": 
-                st.error("❌ Falscher Zugangscode! Diese Version ist nur für geladene Beta-Tester.")
+                st.error("❌ Falscher Zugangscode!")
             elif not new_user:
-                st.error("Bitte gib einen Namen ein, um zu starten!")
+                st.error("Bitte gib einen Namen ein!")
             else:
                 st.session_state.username = new_user
                 if new_user not in database:
-                    database[new_user] = {"xp": 0, "tutor_name": tutor_choice, "inventory": []}
+                    database[new_user] = {"xp": 0, "tutor_name": tutor_choice, "inventory": [], "history": [], "current_question": None}
                 else:
                     database[new_user]["tutor_name"] = tutor_choice
-                    if "inventory" not in database[new_user]: database[new_user]["inventory"] = []
                 
                 save_data(database)
-                st.session_state.xp = database[new_user]["xp"]
+                st.session_state.xp = database[new_user].get("xp", 0)
                 st.session_state.current_tutor = tutor_choice 
+                
+                # Lade persistenten Zustand aus dem Savegame
+                st.session_state.chat_history = database[new_user].get("history", [])
+                st.session_state.current_question = database[new_user].get("current_question", None)
                 st.rerun()
     st.stop()
 
-# --- 5. SEITENLEISTE: LOOTBOX MIT ANIMATION ---
+# --- 5. SEITENLEISTE (Themenauswahl & Garage) ---
 with st.sidebar:
+    st.title("📚 Themenauswahl")
+    
+    # Alle verfügbaren Foliensätze aus der sortierten Datenbank holen
+    alle_foliensaetze = sorted(list(set([q["Foliensatz"] for q in fragen_pool])))
+    
+    # Standardmäßig den Foliensatz der aktuellen Frage auswählen
+    default_idx = 0
+    if st.session_state.current_question and st.session_state.current_question["Foliensatz"] in alle_foliensaetze:
+        default_idx = alle_foliensaetze.index(st.session_state.current_question["Foliensatz"])
+        
+    gewaehlter_foliensatz = st.selectbox("Aktueller Foliensatz:", alle_foliensaetze, index=default_idx)
+    gefilterte_fragen = [q for q in fragen_pool if q["Foliensatz"] == gewaehlter_foliensatz]
+    
+    # Weiche bei manuellem Themenwechsel oder erstem Start
+    if "last_foliensatz" not in st.session_state:
+        st.session_state.last_foliensatz = gewaehlter_foliensatz
+
+    if gewaehlter_foliensatz != st.session_state.last_foliensatz or st.session_state.current_question is None:
+        st.session_state.last_foliensatz = gewaehlter_foliensatz
+        neue_frage = random.choice(gefilterte_fragen)
+        st.session_state.current_question = neue_frage
+        
+        # Frage formmatieren und direkt in den Chat posten
+        willkommens_text = f"🏁 **Themenblock: {gewaehlter_foliensatz}**\n\nHier ist deine Aufgabe (Schwierigkeit: {neue_frage.get('Schwierigkeitsgrad', 'Mittel')}):\n### {neue_frage['Frage']}"
+        st.session_state.chat_history.append({"role": "assistant", "content": willkommens_text})
+        
+        database[st.session_state.username]["history"] = st.session_state.chat_history
+        database[st.session_state.username]["current_question"] = neue_frage
+        save_data(database)
+        st.rerun()
+        
+    st.markdown("---")
     st.title("⚙️ Garage & Album")
-    st.success(f"Eingeloggt als: {st.session_state.username}")
+    st.success(f"Spieler: {st.session_state.username}")
     st.write(f"**Deine XP:** {st.session_state.xp}")
     
     if st.button("Lootbox öffnen (-30 XP) 🎁", width="stretch"):
@@ -143,13 +204,7 @@ with st.sidebar:
             
             # Pack Opening Animation
             animation_box = st.empty()
-            phasen = [
-                ("📦 Reiße das Booster-Pack auf...", "#9ca3af"),
-                ("⚡ Scanne die Fahrzeugklasse...", "#3b82f6"),
-                ("🔥 Überprüfe die Rarity...", "#a855f7"),
-                ("✨ BÄÄM! Das ist dein Pull!", "#eab308")
-            ]
-            for text, color in phasen:
+            for text, color in [("📦 Öffne Pack...", "#9ca3af"), ("⚡ Scanne Klasse...", "#3b82f6"), ("🔥 Überprüfe Rarity...", "#a855f7")]:
                 animation_box.markdown(f"<h3 style='text-align: center; color: {color};'>{text}</h3>", unsafe_allow_html=True)
                 time.sleep(0.7)
             animation_box.empty()
@@ -160,44 +215,42 @@ with st.sidebar:
             pool_com = [k for k, v in KARTEN_KATALOG.items() if "Common" in v["rarity"]]
             
             roll = random.randint(1, 100)
-            if roll <= 5 and pool_leg: gezogenes_auto = random.choice(pool_leg)
-            elif roll <= 20 and pool_epi: gezogenes_auto = random.choice(pool_epi)
-            elif roll <= 50 and pool_rar: gezogenes_auto = random.choice(pool_rar)
-            else: gezogenes_auto = random.choice(pool_com)
+            if roll <= 5 and pool_leg: auto = random.choice(pool_leg)
+            elif roll <= 20 and pool_epi: auto = random.choice(pool_epi)
+            elif roll <= 50 and pool_rar: auto = random.choice(pool_rar)
+            else: auto = random.choice(pool_com)
             
-            database[st.session_state.username]["inventory"].append(gezogenes_auto)
+            database[st.session_state.username]["inventory"].append(auto)
             save_data(database)
-            
-            st.success(f"Du hast gezogen: **{gezogenes_auto}**!")
-            st.components.v1.html(render_card_html(gezogenes_auto), height=200)
+            st.success(f"Gezogen: **{auto}**!")
+            st.components.v1.html(render_card_html(auto), height=200)
             st.balloons()
         else:
-            st.error("Nicht genug XP! Beantworte erst Fragen.")
+            st.error("Nicht genug XP!")
 
-# --- 6. QUIZ BEREICH ---
-st.title(f"📈 {st.session_state.current_tutor}'s EBWL Drill")
+# --- 6. CHAT OBERFLÄCHE ---
+st.title(f"📈 {st.session_state.current_tutor}'s Quiz-Drill")
 
-q = st.session_state.current_question
-st.info(f"**Schwierigkeit:** {q.get('Schwierigkeitsgrad', 'Unbekannt')}\n\n### ❓ Frage:\n{q.get('Frage', 'Keine Frage gefunden')}")
-
+# Kontinuierliche Anzeige des Chatverlaufs
 for msg in st.session_state.chat_history:
     with st.chat_message(msg["role"]): st.markdown(msg["content"])
 
-if student_answer := st.chat_input("Deine Antwort..."):
+q = st.session_state.current_question
+
+if student_answer := st.chat_input("Deine Antwort eingeben..."):
     st.session_state.chat_history.append({"role": "user", "content": student_answer})
     with st.chat_message("user"): st.markdown(student_answer)
 
     with st.chat_message("assistant"):
-        with st.spinner(f"{st.session_state.current_tutor} bewertet deine Antwort..."):
+        with st.spinner(f"{st.session_state.current_tutor} prüft deine Antwort..."):
             
-            # Sauber formatierter System Prompt ohne Einrückungs-Chaos
-            sys_text = f"Du bist {st.session_state.current_tutor}, Tutor für EBWL. Bewerte die folgende Studentenantwort im passenden Slang. Wenn komplett falsch: [+0 XP]. Wenn teilweise richtig: [+10 XP]. Wenn perfekt: [+20 XP]. Du MUSST die XP am Ende im Format [+X XP] schreiben!"
-            
-            usr_text = f"FRAGE: {q.get('Frage', '')}\nMUSTERANTWORT: {q.get('Musterantwort', '')}\nSTUDENTENANTWORT: {student_answer}"
+            sys_text = f"Du bist {st.session_state.current_tutor}, ein genialer und fordernder Tutor für EBWL. Bewerte die Antwort im passenden Slang. Komplett falsch: [+0 XP]. Teilweise richtig: [+10 XP]. Perfekt beantwortet: [+20 XP]. Du MUSST die XP am Ende exakt im Format [+X XP] ausgeben!"
+            usr_text = f"KAPITEL: {q.get('Foliensatz', '')}\nFRAGE: {q.get('Frage', '')}\nMUSTERANTWORT: {q.get('Musterantwort', '')}\nSTUDENTENANTWORT: {student_answer}"
             
             try:
+                # Das brandneue Llama 3.3 Versatile Triebwerk
                 completion = client.chat.completions.create(
-                    model="llama3-8b-8192",
+                    model="llama-3.3-70b-versatile",
                     messages=[
                         {"role": "system", "content": sys_text},
                         {"role": "user", "content": usr_text}
@@ -208,19 +261,29 @@ if student_answer := st.chat_input("Deine Antwort..."):
                 st.markdown(answer)
                 st.session_state.chat_history.append({"role": "assistant", "content": answer})
                 
+                # XP-Zuweisung auslesen
                 xp_matches = re.findall(r'\[\+(\d+)\s*XP\]', answer)
                 if xp_matches:
                     gewonnene_xp = sum(int(match) for match in xp_matches)
                     if gewonnene_xp > 0:
                         st.session_state.xp += gewonnene_xp
                         database[st.session_state.username]["xp"] = st.session_state.xp
-                        save_data(database)
-                        st.success(f"BÄÄM! {gewonnene_xp} XP verdient!")
+                        st.success(f"Konto aktualisiert! +{gewonnene_xp} XP gutgeschrieben!")
                         st.balloons()
                     
-                    time.sleep(4)
-                    st.session_state.current_question = random.choice(fragen_pool)
-                    st.session_state.chat_history = [] 
+                    # Nächste zufällige Frage aus demselben Foliensatz ziehen
+                    time.sleep(3)
+                    neue_frage = random.choice(gefilterte_fragen)
+                    st.session_state.current_question = neue_frage
+                    
+                    next_text = f"Nächste Runde! 🚀 ({gewaehlter_foliensatz})\n\n### {neue_frage['Frage']}"
+                    st.session_state.chat_history.append({"role": "assistant", "content": next_text})
+                    
+                    # Alles im Savegame sichern
+                    database[st.session_state.username]["history"] = st.session_state.chat_history
+                    database[st.session_state.username]["current_question"] = neue_frage
+                    save_data(database)
+                    
                     st.rerun()
             except Exception as e:
-                st.error(f"❌ API Fehler: {e}")
+                st.error(f"❌ Server-Verbindungsfehler: {e}")
