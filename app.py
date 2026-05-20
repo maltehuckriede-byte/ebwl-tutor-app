@@ -123,22 +123,23 @@ if "messages" not in st.session_state: st.session_state.messages = []
 
 # --- 5. STARTBILDSCHIRM & LOGIN ---
 if not st.session_state.username:
-    # Die mittlere Spalte etwas schmaler machen, für einen kompakteren Look
+    # Die Hauptspalte in der Mitte
     col1, col2, col3 = st.columns([1, 1.2, 1])
     with col2:
         st.write("") # Ein wenig Luft nach oben
         
-        # Das Bild in eine kleine, zentrierte Unter-Spalte packen, damit es nicht riesig wird
-        img_col1, img_col2, img_col3 = st.columns([1, 1.5, 1])
+        # Titel JETZT ÜBER DEM BILD und etwas größer
+        st.markdown("<h1 style='text-align: center; margin-bottom: 0;'>Wolf of Wüllnerstraße</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: gray; margin-top: -5px;'>🔒 OPEN CHAT & RAG BETA</p>", unsafe_allow_html=True)
+        
+        # Das Bild etwas größer machen (Verhältnis 1 : 2.5 : 1)
+        img_col1, img_col2, img_col3 = st.columns([1, 2.5, 1])
         with img_col2:
             if os.path.exists("logo.png"): 
                 st.image("logo.png", use_container_width=True)
             else: 
-                st.markdown("<h1 style='text-align: center; font-size: 70px; margin-bottom: 0;'>🐺</h1>", unsafe_allow_html=True)
+                st.markdown("<h1 style='text-align: center; font-size: 80px; margin-bottom: 0; margin-top: -10px;'>🐺</h1>", unsafe_allow_html=True)
         
-        # Titel und Untertitel HTML-zentriert für ein sauberes Dashboard-Feeling
-        st.markdown("<h2 style='text-align: center; margin-top: -15px;'>Wolf of Wüllnerstraße</h2>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; color: gray;'>🔒 OPEN CHAT & RAG BETA</p>", unsafe_allow_html=True)
         st.markdown("---")
         
         new_user = st.text_input("Gib deinen Namen ein (z.B. Malte):")
