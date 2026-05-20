@@ -123,20 +123,34 @@ if "messages" not in st.session_state: st.session_state.messages = []
 
 # --- 5. STARTBILDSCHIRM & LOGIN ---
 if not st.session_state.username:
-    col1, col2, col3 = st.columns([1, 2, 1])
+    # Die mittlere Spalte etwas schmaler machen, für einen kompakteren Look
+    col1, col2, col3 = st.columns([1, 1.2, 1])
     with col2:
-        if os.path.exists("logo.png"): st.image("logo.png", width="stretch")
-        st.title("🐺 Wolf of Wüllnerstraße")
-        st.caption("🔒 OPEN CHAT & RAG BETA")
+        st.write("") # Ein wenig Luft nach oben
+        
+        # Das Bild in eine kleine, zentrierte Unter-Spalte packen, damit es nicht riesig wird
+        img_col1, img_col2, img_col3 = st.columns([1, 1.5, 1])
+        with img_col2:
+            if os.path.exists("logo.png"): 
+                st.image("logo.png", use_container_width=True)
+            else: 
+                st.markdown("<h1 style='text-align: center; font-size: 70px; margin-bottom: 0;'>🐺</h1>", unsafe_allow_html=True)
+        
+        # Titel und Untertitel HTML-zentriert für ein sauberes Dashboard-Feeling
+        st.markdown("<h2 style='text-align: center; margin-top: -15px;'>Wolf of Wüllnerstraße</h2>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: gray;'>🔒 OPEN CHAT & RAG BETA</p>", unsafe_allow_html=True)
         st.markdown("---")
         
         new_user = st.text_input("Gib deinen Namen ein (z.B. Malte):")
         tutor_choice = st.text_input("Name deines Tutors:", value="Jordan Belfort")
         beta_code = st.text_input("Beta-Zugangscode:", type="password")
         
-        if st.button("Lern-Session Starten", width="stretch"):
-            if beta_code != "PITCH2026": st.error("❌ Falscher Zugangscode!")
-            elif not new_user: st.error("Bitte gib einen Namen ein!")
+        st.write("") # Ein wenig Platz vor dem Button
+        if st.button("Lern-Session Starten", use_container_width=True):
+            if beta_code != "PITCH2026": 
+                st.error("❌ Falscher Zugangscode!")
+            elif not new_user: 
+                st.error("Bitte gib einen Namen ein!")
             else:
                 st.session_state.username = new_user
                 if new_user not in database:
