@@ -123,22 +123,16 @@ if "messages" not in st.session_state: st.session_state.messages = []
 
 # --- 5. STARTBILDSCHIRM & LOGIN ---
 if not st.session_state.username:
-    # Die mittlere Spalte wieder breiter machen (1.8), damit die Überschrift in eine Zeile passt
     col1, col2, col3 = st.columns([1, 1.8, 1])
     with col2:
-        st.write("") # Ein wenig Luft nach oben
-        
-        # Titel erzwungen auf einer Zeile und perfekt zentriert
+        st.write("") 
         st.markdown("<h1 style='text-align: center; white-space: nowrap;'>Wolf of Wüllnerstraße</h1>", unsafe_allow_html=True)
         st.markdown("<p style='text-align: center; color: gray; margin-top: -15px;'>🔒 OPEN CHAT & RAG BETA</p>", unsafe_allow_html=True)
         
-        # Das Bild größer machen (die äußeren Ränder der inneren Spalte verkleinert)
         img_col1, img_col2, img_col3 = st.columns([1, 3, 1])
         with img_col2:
-            if os.path.exists("logo.png"): 
-                st.image("logo.png", use_container_width=True)
-            else: 
-                st.markdown("<h1 style='text-align: center; font-size: 80px; margin-top: 0;'>🐺</h1>", unsafe_allow_html=True)
+            if os.path.exists("logo.png"): st.image("logo.png", use_container_width=True)
+            else: st.markdown("<h1 style='text-align: center; font-size: 80px; margin-top: 0;'>🐺</h1>", unsafe_allow_html=True)
         
         st.markdown("---")
         
@@ -146,12 +140,10 @@ if not st.session_state.username:
         tutor_choice = st.text_input("Name deines Tutors:", value="Jordan Belfort")
         beta_code = st.text_input("Beta-Zugangscode:", type="password")
         
-        st.write("") # Ein wenig Platz vor dem Button
+        st.write("") 
         if st.button("Lern-Session Starten", use_container_width=True):
-            if beta_code != "PITCH2026": 
-                st.error("❌ Falscher Zugangscode!")
-            elif not new_user: 
-                st.error("Bitte gib einen Namen ein!")
+            if beta_code != "PITCH2026": st.error("❌ Falscher Zugangscode!")
+            elif not new_user: st.error("Bitte gib einen Namen ein!")
             else:
                 st.session_state.username = new_user
                 if new_user not in database:
@@ -170,9 +162,7 @@ if not st.session_state.username:
 # --- 5.5 POP-UP ANIMATION FÜR DIE LOOTBOX ---
 @st.dialog("🎁 Epischer Loot-Drop!", width="small")
 def show_lootbox_popup(auto, inv_len):
-    # Einzigartiger "Schlüssel" für diese Ziehung, damit die Animation nicht doppelt abspielt
     anim_key = f"anim_{inv_len}"
-    
     if anim_key not in st.session_state:
         animation_box = st.empty()
         phasen = [
@@ -183,7 +173,7 @@ def show_lootbox_popup(auto, inv_len):
         ]
         for text, color in phasen:
             animation_box.markdown(f"<h3 style='text-align: center; color: {color};'>{text}</h3>", unsafe_allow_html=True)
-            time.sleep(0.7)
+            time.sleep(0.8)
         animation_box.empty()
         st.session_state[anim_key] = True
     
@@ -192,30 +182,30 @@ def show_lootbox_popup(auto, inv_len):
     with col2: st.components.v1.html(render_card_html(auto), height=460)
         
     st.balloons()
-    if st.button("Ab in die Garage 🏁", width="stretch"): 
-        st.rerun()
+    if st.button("Ab in die Garage 🏁", width="stretch"): st.rerun()
 
 # --- DYNAMISCHES SKRIPT VERZEICHNIS ---
 verfuegbare_pdfs = []
 if os.path.exists("studienmaterial"):
     verfuegbare_pdfs = sorted([f for f in os.listdir("studienmaterial") if f.endswith(".pdf")])
 
-# --- 6. SEITENLEISTE ---
+# --- 6. SEITENLEISTE (Inklusive Gamification Toggle!) ---
 with st.sidebar:
     st.title("📚 Themenauswahl")
     if verfuegbare_pdfs:
-        gewaehlter_foliensatz = st.selectbox("Aktuelles Skript / Foliensatz:", verfuegbare_pdfs)
+        gewaehlter_foliensatz = st.selectbox("Aktueller Foliensatz:", verfuegbare_pdfs)
     else:
         gewaehlter_foliensatz = "Kein Skript gefunden"
-        st.warning("Bitte lade PDFs in den Ordner 'studienmaterial' hoch.")
+        st.warning("Bitte lade PDFs in 'studienmaterial' hoch.")
         
     st.markdown("---")
-    st.title("⚙️ Garage & Engine")
+    st.title("⚙️ Einstellungen")
     st.success(f"Eingeloggt als: {st.session_state.username}")
     
-    # Engine Switcher
+    # NEU: Gamification / Freier Lernmodus Schalter
+    lern_modus = st.radio("🎮 System-Modus:", ["XP-Drill-Modus (Mit Quests & Belohnung)", "Freier Lernmodus (Reiner Q&A Sandbox)"])
+    
     ki_modus = st.radio("🤖 KI-Engine:", ["Google (Gemini Base)", "Groq (RAG Highspeed)"])
-    st.caption("Google analysiert das komplette PDF. Groq nutzt smartes RAG für spezifische Antworten.")
     st.markdown("---")
     
     col_btn1, col_btn2 = st.columns(2)
@@ -239,7 +229,6 @@ with st.sidebar:
             st.session_state.xp -= 30 
             database[st.session_state.username]["xp"] = st.session_state.xp
             
-            # 1. ERST das Auto ziehen und abspeichern (außerhalb des Pop-ups!)
             pool_leg = [k for k, v in KARTEN_KATALOG.items() if "Legendary" in v["rarity"]]
             pool_epi = [k for k, v in KARTEN_KATALOG.items() if "Epic" in v["rarity"]]
             pool_rar = [k for k, v in KARTEN_KATALOG.items() if "Rare" in v["rarity"]]
@@ -254,7 +243,6 @@ with st.sidebar:
             database[st.session_state.username]["inventory"].append(auto)
             save_data(database)
             
-            # 2. DANN das Pop-up aufrufen und das Auto übergeben
             neue_inv_laenge = len(database[st.session_state.username]["inventory"])
             show_lootbox_popup(auto, neue_inv_laenge)
         else:
@@ -269,10 +257,8 @@ with st.sidebar:
                 st.components.v1.html(render_card_html(karte), height=460)
 
 # --- 7. BACKEND WISSEN (Google & RAG für Groq) ---
-
 @st.cache_resource
 def get_google_file(filename):
-    """Lädt NUR das ausgewählte PDF bei Google hoch."""
     if google_client and filename != "Kein Skript gefunden":
         file_path = os.path.join("studienmaterial", filename)
         return google_client.files.upload(file=file_path)
@@ -280,7 +266,6 @@ def get_google_file(filename):
 
 @st.cache_data
 def load_pdf_pages(filename):
-    """Zerschneidet das PDF für Groq in einzelne Seiten."""
     pages_dict = {}
     if filename != "Kein Skript gefunden":
         file_path = os.path.join("studienmaterial", filename)
@@ -294,75 +279,71 @@ def load_pdf_pages(filename):
     return pages_dict
 
 def get_rag_context(prompt, pages_dict, top_k=3):
-    """Smartes RAG: Sucht die 3 relevantesten Seiten passend zur Frage raus."""
     if not pages_dict: return ""
     stopwords = {"was", "ist", "der", "die", "das", "und", "oder", "ein", "eine", "wie", "erkläre", "bitte"}
     prompt_words = set(re.findall(r'\w{3,}', prompt.lower())) - stopwords
-    
     if not prompt_words: return "\n".join(list(pages_dict.values())[:top_k])
-        
     scored = []
     for p_num, text in pages_dict.items():
-        text_lower = text.lower()
-        score = sum(text_lower.count(w) for w in prompt_words)
+        score = sum(text.lower().count(w) for w in prompt_words)
         scored.append((score, p_num, text))
-        
     scored.sort(key=lambda x: x[0], reverse=True)
     context = ""
     for score, p_num, text in scored[:top_k]:
         if score > 0: context += f"\n--- SEITE {p_num} ---\n{text}\n"
-    
-    return context if context else "Leider keine direkten Treffer auf den Folien gefunden."
+    return context if context else "Keine direkten Treffer auf den Folien gefunden."
 
-# --- 8. BENUTZEROBERFLÄCHE & CHAT LOGIK ---
-st.title(f"📈 Willkommen in der Session, {st.session_state.username}! 🐺")
-
-SYSTEM_PROMPT = f"""Du bist {st.session_state.current_tutor}, ein genialer, aber charakterstarker Tutor für EBWL.
-WICHTIGSTE REGEL: Du MUSST deine Rolle absolut übertrieben spielen! Nutze typischen Slang (Wall-Street, Geld, etc.)!
+# --- 8. SYSTEM PROMPT ANPASSUNG JE NACH MODUS ---
+SYSTEM_PROMPT = f"""Du bist {st.session_state.current_tutor}, ein genialer, aber charakterstarker Tutor für EBWL an der RWTH Aachen.
+WICHTIGSTE REGEL: Du musst die Persönlichkeit, den Slang und die Eigenarten von {st.session_state.current_tutor} PERFEKT imitieren!
 AKTUELLER FOLIENSATZ: {gewaehlter_foliensatz}
 
-DEINE AUFGABEN:
-1. Wenn der Student dir eine Frage stellt, beantworte sie anspruchsvoll.
-2. Wenn der Student dich bittet, IHN abzufragen, stelle ihm eine schwere Frage aus dem {gewaehlter_foliensatz}.
-3. Wenn der Student eine deiner Fragen inhaltlich richtig beantwortet, vergib ihm XP, indem du GANZ AM ENDE deiner Nachricht exakt "[+10 XP]" schreibst! (Je nach Schwierigkeit auch [+20 XP]).
+DEINE WEITEREN REGELN:
+1. RECHTSCHREIBUNG: Achte strikt auf korrekte Grammatik.
+2. QUELLENANGABE: Beziehe dich logisch auf das bereitgestellte Material.
+3. SEI KRITISCH: Faulheit wird nicht akzeptiert.
+4. Verrate niemals das Endergebnis sofort. Nutze Analogien.
 """
+
+# Dynamischer Prompt-Zusatz je nach Modus
+if "XP-Drill-Modus" in lern_modus:
+    SYSTEM_PROMPT += "\n5. XP VERGEBEN: Wenn der Nutzer eine Frage inhaltlich richtig beantwortet oder eine Aufgabe perfekt löst, schreibe exakt '[+10 XP]' oder '[+20 XP]' ganz ans Ende deiner Nachricht!"
+else:
+    SYSTEM_PROMPT += "\n5. FREIER LERNMODUS: Der Student möchte sich ungezwungen mit dir unterhalten oder Unklarheiten klären. Vergib KEINE XP und schreibe niemals '[+10 XP]'. Beantworte einfach seine Fragen im gewohnten Charakter-Slang."
 
 LADE_ZITATE = [
     "Preis ist das, was du zahlst. Wert ist das, was du bekommst. - Warren Buffett",
     "Der Markt kann länger irrational bleiben, als du liquide. - Keynes",
-    "Zinseszins ist das achte Weltwunder. - Albert Einstein",
-    "Geduld ist die oberste Tugend des Investors.",
-    "Bullmärkte werden im Pessimismus geboren. - John Templeton",
-    "Risiko entsteht dann, wenn man nicht weiß, was man tut. - Warren Buffett",
-    "Kaufen, wenn das Blut auf den Straßen fließt. - Baron Rothschild"
+    "Zinseszins ist das achte Weltwunder. - Einstein",
+    "Das Geheimnis des Erfolgs ist, den Standpunkt des anderen zu verstehen. - Henry Ford",
+    "Risiko entsteht dann, wenn man nicht weiß, was man tut. - Warren Buffett"
 ]
+
+# --- 9. BENUTZEROBERFLÄCHE & CHAT LOGIK ---
+st.title(f"Willkommen in der Session, {st.session_state.username}! 🐺")
 
 for message in st.session_state.messages:
     with st.chat_message(message["role"]): st.markdown(message["content"])
 
 st.markdown("<div style='text-align: center; font-size: 13px; color: #888; margin-top: 30px; margin-bottom: 5px;'>🐺 Wolf of Wüllnerstraße ist eine KI und kann Fehler machen. Bitte überprüfe wichtige Fakten.</div>", unsafe_allow_html=True)
 
-if prompt := st.chat_input(f"Frag deinen Tutor {st.session_state.current_tutor} oder lass dich abfragen..."):
+if prompt := st.chat_input(f"Frag deinen Tutor {st.session_state.current_tutor}..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"): st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        spinner_text = f"{st.session_state.current_tutor} sichtet {gewaehlter_foliensatz}... | 💡 {random.choice(LADE_ZITATE)}"
+        spinner_text = f"{st.session_state.current_tutor} analysiert... | 💡 {random.choice(LADE_ZITATE)}"
         with st.spinner(spinner_text):
             try:
                 answer = ""
-                # --- PFAD A: GROQ (Mit On-The-Fly RAG) ---
+                # --- GROQ PFAD ---
                 if "Groq" in ki_modus:
                     if not groq_client: st.error("Groq API Key fehlt!")
                     else:
                         pages_dict = load_pdf_pages(gewaehlter_foliensatz)
                         rag_context = get_rag_context(prompt, pages_dict)
-                        
-                        groq_messages = [
-                            {"role": "system", "content": SYSTEM_PROMPT + "\n\nHIER IST DER RELEVANTE AUSZUG AUS DEM SKRIPT:\n" + rag_context}
-                        ]
-                        for msg in st.session_state.messages[-8:]: # Letzte 8 Nachrichten als Kontext
-                            groq_messages.append({"role": msg["role"], "content": msg["content"]})
+                        groq_messages = [{"role": "system", "content": SYSTEM_PROMPT + "\n\nAUSZUG AUS DEM SKRIPT:\n" + rag_context}]
+                        for msg in st.session_state.messages[-8:]: groq_messages.append({"role": msg["role"], "content": msg["content"]})
                         
                         completion = groq_client.chat.completions.create(
                             model="llama-3.3-70b-versatile",
@@ -370,13 +351,12 @@ if prompt := st.chat_input(f"Frag deinen Tutor {st.session_state.current_tutor} 
                         )
                         answer = completion.choices[0].message.content
 
-                # --- PFAD B: GOOGLE (Mit File Upload) ---
+                # --- GOOGLE PFAD ---
                 else:
                     if not google_client: st.error("Google API Key fehlt!")
                     else:
                         google_file = get_google_file(gewaehlter_foliensatz)
                         history_for_api = [msg["content"] for msg in st.session_state.messages[-8:]]
-                        
                         full_contents = []
                         if google_file: full_contents.append(google_file)
                         full_contents.extend(history_for_api)
@@ -393,19 +373,25 @@ if prompt := st.chat_input(f"Frag deinen Tutor {st.session_state.current_tutor} 
                     st.markdown(answer)
                     st.session_state.messages.append({"role": "assistant", "content": answer})
                     
-                    xp_matches = re.findall(r'\[\+(\d+)\s*XP\]', answer)
-                    if xp_matches:
-                        total_gained_xp = sum(int(match) for match in xp_matches)
-                        st.session_state.xp += total_gained_xp
-                        database[st.session_state.username]["xp"] = st.session_state.xp
-                        st.balloons()
+                    # XP und Rerun logisch blockieren, wenn wir im freien Modus sind
+                    if "XP-Drill-Modus" in lern_modus:
+                        xp_matches = re.findall(r'\[\+(\d+)\s*XP\]', answer)
+                        if xp_matches:
+                            total_gained_xp = sum(int(match) for match in xp_matches)
+                            st.session_state.xp += total_gained_xp
+                            database[st.session_state.username]["xp"] = st.session_state.xp
+                            st.balloons()
+                            
+                        database[st.session_state.username]["history"] = st.session_state.messages
+                        save_data(database)
                         
-                    database[st.session_state.username]["history"] = st.session_state.messages
-                    save_data(database)
-                    
-                    if xp_matches:
-                        time.sleep(2)
-                        st.rerun()
+                        if xp_matches:
+                            time.sleep(2)
+                            st.rerun()
+                    else:
+                        # Im freien Modus einfach nur die Historie geräuschlos wegspeichern
+                        database[st.session_state.username]["history"] = st.session_state.messages
+                        save_data(database)
                         
             except Exception as e:
                 st.error(f"❌ Fehler bei der Server-Anfrage: {e}")
