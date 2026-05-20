@@ -169,39 +169,31 @@ if not st.session_state.username:
 
 # --- 5.5 POP-UP ANIMATION FÜR DIE LOOTBOX ---
 @st.dialog("🎁 Epischer Loot-Drop!", width="small")
-def show_lootbox_popup():
-    animation_box = st.empty()
-    phasen = [
-        ("📦 Reiße das Booster-Pack auf...", "#9ca3af"),
-        ("⚡ Scanne Fahrzeugdaten...", "#3b82f6"),
-        ("🔥 Berechne Rarity...", "#a855f7"),
-        ("✨ BÄÄM! Das ist dein Pull!", "#eab308")
-    ]
-    for text, color in phasen:
-        animation_box.markdown(f"<h3 style='text-align: center; color: {color};'>{text}</h3>", unsafe_allow_html=True)
-        time.sleep(0.8)
-    animation_box.empty()
+def show_lootbox_popup(auto, inv_len):
+    # Einzigartiger "Schlüssel" für diese Ziehung, damit die Animation nicht doppelt abspielt
+    anim_key = f"anim_{inv_len}"
     
-    pool_leg = [k for k, v in KARTEN_KATALOG.items() if "Legendary" in v["rarity"]]
-    pool_epi = [k for k, v in KARTEN_KATALOG.items() if "Epic" in v["rarity"]]
-    pool_rar = [k for k, v in KARTEN_KATALOG.items() if "Rare" in v["rarity"]]
-    pool_com = [k for k, v in KARTEN_KATALOG.items() if "Common" in v["rarity"]]
-    
-    roll = random.randint(1, 100)
-    if roll <= 5 and pool_leg: auto = random.choice(pool_leg)
-    elif roll <= 20 and pool_epi: auto = random.choice(pool_epi)
-    elif roll <= 50 and pool_rar: auto = random.choice(pool_rar)
-    else: auto = random.choice(pool_com)
-    
-    database[st.session_state.username]["inventory"].append(auto)
-    save_data(database)
+    if anim_key not in st.session_state:
+        animation_box = st.empty()
+        phasen = [
+            ("📦 Reiße das Booster-Pack auf...", "#9ca3af"),
+            ("⚡ Scanne Fahrzeugdaten...", "#3b82f6"),
+            ("🔥 Berechne Rarity...", "#a855f7"),
+            ("✨ BÄÄM! Das ist dein Pull!", "#eab308")
+        ]
+        for text, color in phasen:
+            animation_box.markdown(f"<h3 style='text-align: center; color: {color};'>{text}</h3>", unsafe_allow_html=True)
+            time.sleep(0.7)
+        animation_box.empty()
+        st.session_state[anim_key] = True
     
     st.success(f"Herzlichen Glückwunsch! Du hast **{auto}** gezogen!")
     col1, col2, col3 = st.columns([0.5, 3, 0.5])
     with col2: st.components.v1.html(render_card_html(auto), height=460)
         
     st.balloons()
-    if st.button("Ab in die Garage 🏁", width="stretch"): st.rerun()
+    if st.button("Ab in die Garage 🏁", width="stretch"): 
+        st.rerun()
 
 # --- DYNAMISCHES SKRIPT VERZEICHNIS ---
 verfuegbare_pdfs = []
@@ -246,8 +238,25 @@ with st.sidebar:
         if st.session_state.xp >= 30:
             st.session_state.xp -= 30 
             database[st.session_state.username]["xp"] = st.session_state.xp
+            
+            # 1. ERST das Auto ziehen und abspeichern (außerhalb des Pop-ups!)
+            pool_leg = [k for k, v in KARTEN_KATALOG.items() if "Legendary" in v["rarity"]]
+            pool_epi = [k for k, v in KARTEN_KATALOG.items() if "Epic" in v["rarity"]]
+            pool_rar = [k for k, v in KARTEN_KATALOG.items() if "Rare" in v["rarity"]]
+            pool_com = [k for k, v in KARTEN_KATALOG.items() if "Common" in v["rarity"]]
+            
+            roll = random.randint(1, 100)
+            if roll <= 5 and pool_leg: auto = random.choice(pool_leg)
+            elif roll <= 20 and pool_epi: auto = random.choice(pool_epi)
+            elif roll <= 50 and pool_rar: auto = random.choice(pool_rar)
+            else: auto = random.choice(pool_com)
+            
+            database[st.session_state.username]["inventory"].append(auto)
             save_data(database)
-            show_lootbox_popup()
+            
+            # 2. DANN das Pop-up aufrufen und das Auto übergeben
+            neue_inv_laenge = len(database[st.session_state.username]["inventory"])
+            show_lootbox_popup(auto, neue_inv_laenge)
         else:
             st.error("Nicht genug XP!")
 
