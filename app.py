@@ -123,22 +123,22 @@ if "messages" not in st.session_state: st.session_state.messages = []
 
 # --- 5. STARTBILDSCHIRM & LOGIN ---
 if not st.session_state.username:
-    # Die Hauptspalte in der Mitte
-    col1, col2, col3 = st.columns([1, 1.2, 1])
+    # Die mittlere Spalte wieder breiter machen (1.8), damit die Überschrift in eine Zeile passt
+    col1, col2, col3 = st.columns([1, 1.8, 1])
     with col2:
         st.write("") # Ein wenig Luft nach oben
         
-        # Titel JETZT ÜBER DEM BILD und etwas größer
-        st.markdown("<h1 style='text-align: center; margin-bottom: 0;'>Wolf of Wüllnerstraße</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; color: gray; margin-top: -5px;'>🔒 OPEN CHAT & RAG BETA</p>", unsafe_allow_html=True)
+        # Titel erzwungen auf einer Zeile und perfekt zentriert
+        st.markdown("<h1 style='text-align: center; white-space: nowrap;'>Wolf of Wüllnerstraße</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: gray; margin-top: -15px;'>🔒 OPEN CHAT & RAG BETA</p>", unsafe_allow_html=True)
         
-        # Das Bild etwas größer machen (Verhältnis 1 : 2.5 : 1)
-        img_col1, img_col2, img_col3 = st.columns([1, 2.5, 1])
+        # Das Bild größer machen (die äußeren Ränder der inneren Spalte verkleinert)
+        img_col1, img_col2, img_col3 = st.columns([1, 3, 1])
         with img_col2:
             if os.path.exists("logo.png"): 
                 st.image("logo.png", use_container_width=True)
             else: 
-                st.markdown("<h1 style='text-align: center; font-size: 80px; margin-bottom: 0; margin-top: -10px;'>🐺</h1>", unsafe_allow_html=True)
+                st.markdown("<h1 style='text-align: center; font-size: 80px; margin-top: 0;'>🐺</h1>", unsafe_allow_html=True)
         
         st.markdown("---")
         
