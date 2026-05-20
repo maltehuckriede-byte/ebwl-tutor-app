@@ -13,15 +13,14 @@ import base64
 # --- 1. SETUP & API-CLIENTS ---
 st.set_page_config(page_title="Wolf of Wüllnerstraße", page_icon="🐺", layout="wide")
 
-# Google Client initialisieren
 GOOGLE_API_KEY = st.secrets.get("GOOGLE_API_KEY", "")
 google_client = genai.Client(api_key=GOOGLE_API_KEY) if GOOGLE_API_KEY else None
 
-# Groq Client initialisieren
 GROQ_API_KEY = st.secrets.get("GROQ_API_KEY", "")
 groq_client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
 
 # --- 2. DIE RIESIGE FAHRZEUG-DATENBANK ---
+# WICHTIG: Füge hier deinen kompletten Katalog mit allen 25 Autos ein!
 KARTEN_KATALOG = {
     # --- COMMON (GRAU) ---
     "VW Golf VIII GTI": {"klasse": "C1", "staerke": "45", "kennzeichen": "GOLF-GTI", "rarity": "Common (Grau)", "daten": {"Modell": "GTI Performance", "⚡ Leistung": "180 kW (245 PS)", "🕒 0–100 km/h": "6,2 s", "🏁 V-Max": "250 km/h"}},
@@ -59,11 +58,7 @@ KARTEN_KATALOG = {
 
 # --- 3. HILFSFUNKTIONEN (HTML & BILDER) ---
 def get_image_base64(auto_name):
-    moegliche_dateien = [
-        (f"karten/{auto_name}.png", "image/png"),
-        (f"karten/{auto_name}.jpg", "image/jpeg"),
-        (f"karten/{auto_name}.jpeg", "image/jpeg")
-    ]
+    moegliche_dateien = [(f"karten/{auto_name}.png", "image/png"), (f"karten/{auto_name}.jpg", "image/jpeg"), (f"karten/{auto_name}.jpeg", "image/jpeg")]
     for datei_pfad, mime_type in moegliche_dateien:
         if os.path.exists(datei_pfad):
             with open(datei_pfad, "rb") as img_file:
@@ -75,21 +70,15 @@ def render_card_html(auto_name):
     if not info: return ""
     bild_url = get_image_base64(auto_name)
     
-    if not bild_url:
-        bild_html = f'<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:50px; background: #e2eaf3;">🏎️</div>'
-    else:
-        bild_html = f'<img src="{bild_url}" style="width: 100%; height: 100%; object-fit: cover;">'
+    if not bild_url: bild_html = f'<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:50px; background: #e2eaf3;">🏎️</div>'
+    else: bild_html = f'<img src="{bild_url}" style="width: 100%; height: 100%; object-fit: cover;">'
         
     tabellen_rows = "".join([f"<tr><td style='padding: 4px 8px; border-bottom: 1px solid #eee; color: #333;'>{k}</td><td style='padding: 4px 8px; text-align: right; font-weight: bold; border-bottom: 1px solid #eee; color: #111;'>{v}</td></tr>" for k, v in info['daten'].items()])
 
-    if "Legendary" in info['rarity']:
-        main_color, dark_color, bg_color = "#eab308", "#422006", "#fefce8"
-    elif "Epic" in info['rarity']:
-        main_color, dark_color, bg_color = "#a855f7", "#3b0764", "#faf5ff"
-    elif "Rare" in info['rarity']:
-        main_color, dark_color, bg_color = "#3b82f6", "#172554", "#eff6ff"
-    else: 
-        main_color, dark_color, bg_color = "#9ca3af", "#1f2937", "#f3f4f6"
+    if "Legendary" in info['rarity']: main_color, dark_color, bg_color = "#eab308", "#422006", "#fefce8"
+    elif "Epic" in info['rarity']: main_color, dark_color, bg_color = "#a855f7", "#3b0764", "#faf5ff"
+    elif "Rare" in info['rarity']: main_color, dark_color, bg_color = "#3b82f6", "#172554", "#eff6ff"
+    else: main_color, dark_color, bg_color = "#9ca3af", "#1f2937", "#f3f4f6"
 
     return f"""
     <style>body {{ margin: 0; padding: 0; overflow: hidden; background-color: transparent; }} ::-webkit-scrollbar {{ display: none; }}</style>
@@ -138,18 +127,16 @@ if not st.session_state.username:
     with col2:
         if os.path.exists("logo.png"): st.image("logo.png", width="stretch")
         st.title("🐺 Wolf of Wüllnerstraße")
-        st.caption("🔒 CLOSED BETA VERSION")
+        st.caption("🔒 OPEN CHAT & RAG BETA")
         st.markdown("---")
         
         new_user = st.text_input("Gib deinen Namen ein (z.B. Malte):")
         tutor_choice = st.text_input("Name deines Tutors:", value="Jordan Belfort")
-        beta_code = st.text_input("Beta-Zugangscode:", type="password", help="Nur für autorisierte Tester.")
+        beta_code = st.text_input("Beta-Zugangscode:", type="password")
         
         if st.button("Lern-Session Starten", width="stretch"):
-            if beta_code != "PITCH2026": 
-                st.error("❌ Falscher Zugangscode! Diese Version ist nur für geladene Beta-Tester.")
-            elif not new_user:
-                st.error("Bitte gib einen Namen ein, um zu starten!")
+            if beta_code != "PITCH2026": st.error("❌ Falscher Zugangscode!")
+            elif not new_user: st.error("Bitte gib einen Namen ein!")
             else:
                 st.session_state.username = new_user
                 if new_user not in database:
@@ -159,10 +146,9 @@ if not st.session_state.username:
                     if "inventory" not in database[new_user]: database[new_user]["inventory"] = []
                 
                 save_data(database)
-                user_save = database[new_user]
-                st.session_state.xp = user_save["xp"]
+                st.session_state.xp = database[new_user]["xp"]
                 st.session_state.current_tutor = tutor_choice 
-                st.session_state.messages = user_save.get("history", [])
+                st.session_state.messages = database[new_user].get("history", [])
                 st.rerun()
     st.stop()
 
@@ -197,25 +183,32 @@ def show_lootbox_popup():
     
     st.success(f"Herzlichen Glückwunsch! Du hast **{auto}** gezogen!")
     col1, col2, col3 = st.columns([0.5, 3, 0.5])
-    with col2:
-        st.components.v1.html(render_card_html(auto), height=460)
+    with col2: st.components.v1.html(render_card_html(auto), height=460)
         
     st.balloons()
-    if st.button("Ab in die Garage 🏁", width="stretch"):
-        st.rerun()
+    if st.button("Ab in die Garage 🏁", width="stretch"): st.rerun()
 
+# --- DYNAMISCHES SKRIPT VERZEICHNIS ---
+verfuegbare_pdfs = []
+if os.path.exists("studienmaterial"):
+    verfuegbare_pdfs = sorted([f for f in os.listdir("studienmaterial") if f.endswith(".pdf")])
 
-# --- AB HIER: NUR WENN EINGELOGGT ---
-
-# --- 6. SEITENLEISTE (Garage, Shop & Engine-Switch) ---
+# --- 6. SEITENLEISTE ---
 with st.sidebar:
-    st.title("⚙️ Garage & Album")
+    st.title("📚 Themenauswahl")
+    if verfuegbare_pdfs:
+        gewaehlter_foliensatz = st.selectbox("Aktuelles Skript / Foliensatz:", verfuegbare_pdfs)
+    else:
+        gewaehlter_foliensatz = "Kein Skript gefunden"
+        st.warning("Bitte lade PDFs in den Ordner 'studienmaterial' hoch.")
+        
+    st.markdown("---")
+    st.title("⚙️ Garage & Engine")
     st.success(f"Eingeloggt als: {st.session_state.username}")
     
-    # NEU: Der Engine Switcher
-    st.markdown("---")
-    ki_modus = st.radio("🤖 Aktuelle KI-Engine:", ["Google (Gemini Backup)", "Groq (Highspeed Llama-3)"])
-    st.caption("Nutze Google für das Lesen des Skripts. Groq ist als Backup verfügbar.")
+    # Engine Switcher
+    ki_modus = st.radio("🤖 KI-Engine:", ["Google (Gemini Base)", "Groq (RAG Highspeed)"])
+    st.caption("Google analysiert das komplette PDF. Groq nutzt smartes RAG für spezifische Antworten.")
     st.markdown("---")
     
     col_btn1, col_btn2 = st.columns(2)
@@ -231,9 +224,8 @@ with st.sidebar:
             st.rerun()
             
     st.markdown("---")
-    
     st.title("🃏 Fahrzeug-Quartett")
-    st.write(f"**Deine XP (Währung):** {st.session_state.xp}")
+    st.write(f"**Deine XP:** {st.session_state.xp}")
     
     if st.button("Lootbox öffnen (-30 XP) 🎁", width="stretch"):
         if st.session_state.xp >= 30:
@@ -242,108 +234,110 @@ with st.sidebar:
             save_data(database)
             show_lootbox_popup()
         else:
-            st.error("Nicht genug XP! Beantworte erst Fragen.")
+            st.error("Nicht genug XP!")
 
     with st.expander("📚 Dein Sammelalbum", expanded=True):
         inventar = database[st.session_state.username].get("inventory", [])
-        if not inventar:
-            st.info("Deine Garage ist noch leer.")
+        if not inventar: st.info("Garage ist leer.")
         else:
-            karten_counts = {karte: inventar.count(karte) for karte in set(inventar)}
-            for karte, anzahl in karten_counts.items():
+            for karte, anzahl in {karte: inventar.count(karte) for karte in set(inventar)}.items():
                 st.write(f"**Anzahl: {anzahl}x**")
                 st.components.v1.html(render_card_html(karte), height=460)
 
-# --- 7. SYSTEM PROMPT ---
-echte_dateien = []
-if os.path.exists("studienmaterial"): echte_dateien = [f for f in os.listdir("studienmaterial") if f.endswith(".pdf")]
-dateien_string = ", ".join(echte_dateien)
+# --- 7. BACKEND WISSEN (Google & RAG für Groq) ---
 
-SYSTEM_PROMPT = f"""Du bist {st.session_state.current_tutor}, ein anspruchsvoller Tutor für EBWL an der RWTH Aachen.
-WICHTIGSTE REGEL: Du musst die Persönlichkeit, den Slang und die Eigenarten von {st.session_state.current_tutor} PERFEKT imitieren!
+@st.cache_resource
+def get_google_file(filename):
+    """Lädt NUR das ausgewählte PDF bei Google hoch."""
+    if google_client and filename != "Kein Skript gefunden":
+        file_path = os.path.join("studienmaterial", filename)
+        return google_client.files.upload(file=file_path)
+    return None
 
-DEINE WEITEREN REGELN:
-1. RECHTSCHREIBUNG: Achte strikt auf korrekte Grammatik.
-2. QUELLENANGABE: Du darfst als Quelle AUSSCHLIESSLICH diese exakten Dateinamen verwenden: {dateien_string}. 
-3. SEI KRITISCH: Faulheit wird nicht akzeptiert.
-4. XP VERGEBEN: Wenn der Nutzer inhaltlich richtig antwortet, schreibe exakt "[+10 XP]".
-5. Verrate niemals das Endergebnis sofort. Nutze Analogien.
+@st.cache_data
+def load_pdf_pages(filename):
+    """Zerschneidet das PDF für Groq in einzelne Seiten."""
+    pages_dict = {}
+    if filename != "Kein Skript gefunden":
+        file_path = os.path.join("studienmaterial", filename)
+        try:
+            with open(file_path, "rb") as f:
+                reader = pypdf.PdfReader(f)
+                for i, page in enumerate(reader.pages):
+                    text = page.extract_text()
+                    if text: pages_dict[i+1] = text
+        except Exception as e: st.error(f"PDF Lesefehler: {e}")
+    return pages_dict
+
+def get_rag_context(prompt, pages_dict, top_k=3):
+    """Smartes RAG: Sucht die 3 relevantesten Seiten passend zur Frage raus."""
+    if not pages_dict: return ""
+    stopwords = {"was", "ist", "der", "die", "das", "und", "oder", "ein", "eine", "wie", "erkläre", "bitte"}
+    prompt_words = set(re.findall(r'\w{3,}', prompt.lower())) - stopwords
+    
+    if not prompt_words: return "\n".join(list(pages_dict.values())[:top_k])
+        
+    scored = []
+    for p_num, text in pages_dict.items():
+        text_lower = text.lower()
+        score = sum(text_lower.count(w) for w in prompt_words)
+        scored.append((score, p_num, text))
+        
+    scored.sort(key=lambda x: x[0], reverse=True)
+    context = ""
+    for score, p_num, text in scored[:top_k]:
+        if score > 0: context += f"\n--- SEITE {p_num} ---\n{text}\n"
+    
+    return context if context else "Leider keine direkten Treffer auf den Folien gefunden."
+
+# --- 8. BENUTZEROBERFLÄCHE & CHAT LOGIK ---
+st.title(f"📈 Willkommen in der Session, {st.session_state.username}! 🐺")
+
+SYSTEM_PROMPT = f"""Du bist {st.session_state.current_tutor}, ein genialer, aber charakterstarker Tutor für EBWL.
+WICHTIGSTE REGEL: Du MUSST deine Rolle absolut übertrieben spielen! Nutze typischen Slang (Wall-Street, Geld, etc.)!
+AKTUELLER FOLIENSATZ: {gewaehlter_foliensatz}
+
+DEINE AUFGABEN:
+1. Wenn der Student dir eine Frage stellt, beantworte sie anspruchsvoll.
+2. Wenn der Student dich bittet, IHN abzufragen, stelle ihm eine schwere Frage aus dem {gewaehlter_foliensatz}.
+3. Wenn der Student eine deiner Fragen inhaltlich richtig beantwortet, vergib ihm XP, indem du GANZ AM ENDE deiner Nachricht exakt "[+10 XP]" schreibst! (Je nach Schwierigkeit auch [+20 XP]).
 """
 
-# --- 8. BACKEND WISSEN (DUAL MODE) ---
-
-# GOOGLE: Native File-Uploads
-@st.cache_resource
-def load_google_knowledge():
-    if not os.path.exists("studienmaterial"): os.makedirs("studienmaterial")
-    files_to_send = []
-    if google_client:
-        for filename in os.listdir("studienmaterial"):
-            if filename.endswith(".pdf"):
-                file_path = os.path.join("studienmaterial", filename)
-                uploaded_file = google_client.files.upload(file=file_path)
-                files_to_send.append(uploaded_file)
-    return files_to_send
-
-# GROQ: Manueller Python-PDF-Reader
-@st.cache_resource
-def load_groq_knowledge():
-    full_text = ""
-    if not os.path.exists("studienmaterial"): return full_text
-    for filename in os.listdir("studienmaterial"):
-        if filename.endswith(".pdf"):
-            file_path = os.path.join("studienmaterial", filename)
-            full_text += f"\n\n--- INHALT VON {filename} ---\n"
-            try:
-                with open(file_path, "rb") as f:
-                    reader = pypdf.PdfReader(f)
-                    for page in reader.pages:
-                        page_text = page.extract_text()
-                        if page_text: full_text += page_text + "\n"
-            except Exception as e:
-                st.error(f"Fehler beim Lesen von {filename}: {e}")
-    return full_text
-
-# --- 9. ZITATE FÜR DEN LADESCREEN ---
 LADE_ZITATE = [
     "Preis ist das, was du zahlst. Wert ist das, was du bekommst. - Warren Buffett",
-    "Der Markt kann länger irrational bleiben, als du liquide. - John Maynard Keynes",
+    "Der Markt kann länger irrational bleiben, als du liquide. - Keynes",
     "Zinseszins ist das achte Weltwunder. - Albert Einstein",
     "Geduld ist die oberste Tugend des Investors.",
     "Bullmärkte werden im Pessimismus geboren. - John Templeton",
-    "Das Geheimnis des Erfolgs ist, den Standpunkt des anderen zu verstehen. - Henry Ford",
     "Risiko entsteht dann, wenn man nicht weiß, was man tut. - Warren Buffett",
-    "Es gibt nur einen Chef: Den Kunden. - Sam Walton",
     "Kaufen, wenn das Blut auf den Straßen fließt. - Baron Rothschild"
 ]
 
-# --- 10. BENUTZEROBERFLÄCHE & CHAT LOGIK ---
-st.title(f"Willkommen in der Session, {st.session_state.username}! 🐺")
-
 for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+    with st.chat_message(message["role"]): st.markdown(message["content"])
 
-if prompt := st.chat_input(f"Frag deinen Tutor {st.session_state.current_tutor}..."):
+st.markdown("<div style='text-align: center; font-size: 13px; color: #888; margin-top: 30px; margin-bottom: 5px;'>🐺 Wolf of Wüllnerstraße ist eine KI und kann Fehler machen. Bitte überprüfe wichtige Fakten.</div>", unsafe_allow_html=True)
+
+if prompt := st.chat_input(f"Frag deinen Tutor {st.session_state.current_tutor} oder lass dich abfragen..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"): st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        spinner_text = f"{st.session_state.current_tutor} analysiert (Engine: {ki_modus})... | 💡 {random.choice(LADE_ZITATE)}"
+        spinner_text = f"{st.session_state.current_tutor} sichtet {gewaehlter_foliensatz}... | 💡 {random.choice(LADE_ZITATE)}"
         with st.spinner(spinner_text):
             try:
                 answer = ""
-                
-                # --- PFAD A: GROQ (LLAMA 3) ---
+                # --- PFAD A: GROQ (Mit On-The-Fly RAG) ---
                 if "Groq" in ki_modus:
-                    if not groq_client: st.error("Fehler: Groq API Key fehlt in den Secrets!")
+                    if not groq_client: st.error("Groq API Key fehlt!")
                     else:
-                        pdf_text = load_groq_knowledge()
-                        # Wir übergeben den Prompt und den ausgelesenen PDF-Text an Groq (gekürzt auf 300.000 Zeichen zur Sicherheit)
+                        pages_dict = load_pdf_pages(gewaehlter_foliensatz)
+                        rag_context = get_rag_context(prompt, pages_dict)
+                        
                         groq_messages = [
-                            {"role": "system", "content": SYSTEM_PROMPT + "\n\nHIER IST DAS STUDIENMATERIAL DES NUTZERS:\n" + pdf_text[:300000]}
+                            {"role": "system", "content": SYSTEM_PROMPT + "\n\nHIER IST DER RELEVANTE AUSZUG AUS DEM SKRIPT:\n" + rag_context}
                         ]
-                        for msg in st.session_state.messages:
+                        for msg in st.session_state.messages[-8:]: # Letzte 8 Nachrichten als Kontext
                             groq_messages.append({"role": msg["role"], "content": msg["content"]})
                         
                         completion = groq_client.chat.completions.create(
@@ -352,13 +346,16 @@ if prompt := st.chat_input(f"Frag deinen Tutor {st.session_state.current_tutor}.
                         )
                         answer = completion.choices[0].message.content
 
-                # --- PFAD B: GOOGLE (GEMINI) ---
+                # --- PFAD B: GOOGLE (Mit File Upload) ---
                 else:
-                    if not google_client: st.error("Fehler: Google API Key fehlt in den Secrets!")
+                    if not google_client: st.error("Google API Key fehlt!")
                     else:
-                        google_files = load_google_knowledge()
-                        history_for_api = [msg["content"] for msg in st.session_state.messages]
-                        full_contents = google_files + history_for_api
+                        google_file = get_google_file(gewaehlter_foliensatz)
+                        history_for_api = [msg["content"] for msg in st.session_state.messages[-8:]]
+                        
+                        full_contents = []
+                        if google_file: full_contents.append(google_file)
+                        full_contents.extend(history_for_api)
                         
                         response = google_client.models.generate_content(
                             model='gemini-2.5-flash',
@@ -367,7 +364,7 @@ if prompt := st.chat_input(f"Frag deinen Tutor {st.session_state.current_tutor}.
                         )
                         answer = response.text
                 
-                # --- ANTWORT VERARBEITEN (Für beide KIs gleich) ---
+                # --- ANTWORT VERARBEITEN ---
                 if answer:
                     st.markdown(answer)
                     st.session_state.messages.append({"role": "assistant", "content": answer})
