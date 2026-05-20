@@ -294,14 +294,49 @@ def get_rag_context(prompt, pages_dict, top_k=3):
     return context if context else "Keine direkten Treffer auf den Folien gefunden."
 
 # --- 8. SYSTEM PROMPT ANPASSUNG JE NACH MODUS ---
-SYSTEM_PROMPT = f"""Du bist {st.session_state.current_tutor}, ein genialer, aber charakterstarker Tutor für EBWL an der RWTH Aachen.
-WICHTIGSTE REGEL: Du musst die Persönlichkeit, den Slang und die Eigenarten von {st.session_state.current_tutor} PERFEKT imitieren!
+
+# Neue Session States für das Lernbot-Konzept
+if "level" not in st.session_state: 
+    st.session_state.level = "klausur" # Standardlevel
+if "klausur_modus" not in st.session_state: 
+    st.session_state.klausur_modus = False
+
+# Identität
+SYSTEM_PROMPT = f"""Du bist {st.session_state.current_tutor}, ein seriöser, sachlicher, klausurorientierter aber charakterstarker Tutor für EBWL Studenten an der RWTH Aachen.
+DEINE MISSION: Lernende optimal auf ihre EBWL Klausuren vorbereiten, indem du präzise, verständliche und prüfungsrelevante Antworten gibst. Nutze den bereitgestellten Foliensatz als Hauptquelle für deine Erklärungen und beziehe dich immer darauf, wenn es relevant ist. Minimiere die Lernzeit und maximiere das Wissen.
+WICHTIGSTE REGEL: Du musst die Persönlichkeit, den Slang und die Eigenarten von {st.session_state.current_tutor} PERFEKT imitieren, dabei aber sachlich bleiben und nicht zu lang antworten!
 AKTUELLER FOLIENSATZ: {gewaehlter_foliensatz}
 
-DEINE WEITEREN REGELN:
+# Fachlicher Kontext:
+1. Kurs: Einführung in die Betriebswirtschaftslehre (EBWL)
+2. Lehrstuhl: Prof. Brettel, TIME Research Area / Innovation & Enterpreneurship Group (WIN)
+3. Hochschule: RWTH Aachen
+4. Klausurformat: Dynexite (Multiple Choice + offene Fragen), Taschenrechner erlaubt, 60 Minuten
+
+# Wissenensbasis: 
+1. Primärquelle: Der aktuell ausgewählte Foliensatz, der als PDF vorliegt. Ziehe alle relevanten Informationen, Beispiele und Erklärungen aus diesem Material.
+2. Modulstruktur der Folien: 
+    2.1. Unternehmensgrundlagen: Accounting, Finanzen, Investitionen
+    2.2. Leadership & Management: Organisation, Controlling, HA
+    2.3. Wertschöpfung: Strategie, Marketing, Produktion
+
+# Wie du antworten sollst:
+1. Kompakt vor ausführlich: Jeder Satz muss Mehrwert haben. Keine Ausschmückungen, keine Floskeln, kein Geschwätz.
+2. Folien-Treue ist Pflicht: Was nicht in den Folien steht, wird klar markiert. Wenn du etwas nicht weißt, sag es direkt, anstatt zu raten oder zu spekulieren.
+3. Adaptiv nach Level und Modus: Quiz = knapp. Erklärung = strukturiert. Lernzettel = vollständig.
+4. Strukturreiche Formatierung: mit Tabellen, gezielten Emojis als Anker (✅ ❌ 📎 💡 🔥), klaren Überschriften.
+
+# Regeln für Spache und Stil:
+1. Sprache & Anrede: Deutsch, sprich den Studenten immer per "Du" an.
+2. Länge: Immer aufs Wesentliche beschränken. Niemals eine Wall-of-Text generieren! Nutze Stichpunkte und fette Keywords.
+3. Fachbegriffe: Beim ersten Auftreten eines Fachbegriffs nennst du den englischen Terminus und in Klammern die deutsche Übersetzung (z.B. NPV (Kapitalwert), Break-Even (Gewinnschwelle)). Danach nutzt du nur noch den englischen Begriff.
+4. Folien-Treue: Was in den Folien steht, ist Gesetz.
+5. Adaptive Level-Empfehlung: Wenn du merkst, dass der Student mehrere Fragen in Folge richtig hat, schlage ihm kurz vor, mit '/level vertiefung' das Niveau zu erhöhen. Bei wiederholten Fehlern schlage '/level basic' vor.
+
+# DEINE WEITEREN REGELN:
 1. RECHTSCHREIBUNG: Achte strikt auf korrekte Grammatik.
-2. QUELLENANGABE: Beziehe dich logisch auf das bereitgestellte Material.
-3. SEI KRITISCH: Faulheit wird nicht akzeptiert.
+2. QUELLENANGABE: Beziehe dich logisch auf das bereitgestellte Material, vermeide aber konkrete Seitenzahlen, da der Nutzer eventuell nicht exakt die gleiche Version hat. Stattdessen kannst du allgemeine Hinweise geben wie "In den ersten Folien wird das Thema X behandelt..." oder "Später im Skript findest du eine gute Erklärung zu Y...".
+3. SEI KRITISCH: Rede nicht um den heißen Brei herum, sondern beantworte die Fragen direkt und ohne Umschweife. Vermeide es, zu sehr auszuschweifen oder unnötige Informationen zu liefern, die nicht direkt zur Beantwortung der Frage beitragen. Rede falsche Antworten aber nicht schön.
 4. Verrate niemals das Endergebnis sofort. Nutze Analogien.
 """
 
@@ -317,6 +352,7 @@ LADE_ZITATE = [
     "Zinseszins ist das achte Weltwunder. - Einstein",
     "Das Geheimnis des Erfolgs ist, den Standpunkt des anderen zu verstehen. - Henry Ford",
     "Risiko entsteht dann, wenn man nicht weiß, was man tut. - Warren Buffett"
+    "Erfolg hat drei Buchstaben: TUN. - Goethe"
 ]
 
 # --- 9. BENUTZEROBERFLÄCHE & CHAT LOGIK ---
@@ -327,71 +363,171 @@ for message in st.session_state.messages:
 
 st.markdown("<div style='text-align: center; font-size: 13px; color: #888; margin-top: 30px; margin-bottom: 5px;'>🐺 Wolf of Wüllnerstraße ist eine KI und kann Fehler machen. Bitte überprüfe wichtige Fakten.</div>", unsafe_allow_html=True)
 
-if prompt := st.chat_input(f"Frag deinen Tutor {st.session_state.current_tutor}..."):
+if prompt := st.chat_input(f"Nachricht oder /befehl eingeben..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"): st.markdown(prompt)
 
-    with st.chat_message("assistant"):
-        spinner_text = f"{st.session_state.current_tutor} analysiert... | 💡 {random.choice(LADE_ZITATE)}"
-        with st.spinner(spinner_text):
-            try:
-                answer = ""
-                # --- GROQ PFAD ---
-                if "Groq" in ki_modus:
-                    if not groq_client: st.error("Groq API Key fehlt!")
-                    else:
-                        pages_dict = load_pdf_pages(gewaehlter_foliensatz)
-                        rag_context = get_rag_context(prompt, pages_dict)
-                        groq_messages = [{"role": "system", "content": SYSTEM_PROMPT + "\n\nAUSZUG AUS DEM SKRIPT:\n" + rag_context}]
-                        for msg in st.session_state.messages[-8:]: groq_messages.append({"role": msg["role"], "content": msg["content"]})
-                        
-                        completion = groq_client.chat.completions.create(
-                            model="llama-3.3-70b-versatile",
-                            messages=groq_messages
-                        )
-                        answer = completion.choices[0].message.content
+    # ==========================================
+    # 💥 DER NEUE SLASH-COMMAND PARSER
+    # ==========================================
+    system_override = ""
+    direct_response = None
+    user_input_lower = prompt.strip().lower()
 
-                # --- GOOGLE PFAD ---
-                else:
-                    if not google_client: st.error("Google API Key fehlt!")
-                    else:
-                        google_file = get_google_file(gewaehlter_foliensatz)
-                        history_for_api = [msg["content"] for msg in st.session_state.messages[-8:]]
-                        full_contents = []
-                        if google_file: full_contents.append(google_file)
-                        full_contents.extend(history_for_api)
-                        
-                        response = google_client.models.generate_content(
-                            model='gemini-2.5-flash',
-                            contents=full_contents,
-                            config=types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT)
-                        )
-                        answer = response.text
-                
-                # --- ANTWORT VERARBEITEN ---
-                if answer:
-                    st.markdown(answer)
-                    st.session_state.messages.append({"role": "assistant", "content": answer})
-                    
-                    # XP und Rerun logisch blockieren, wenn wir im freien Modus sind
-                    if "XP-Drill-Modus" in lern_modus:
-                        xp_matches = re.findall(r'\[\+(\d+)\s*XP\]', answer)
-                        if xp_matches:
-                            total_gained_xp = sum(int(match) for match in xp_matches)
-                            st.session_state.xp += total_gained_xp
-                            database[st.session_state.username]["xp"] = st.session_state.xp
-                            st.balloons()
+    # 1. Befehle, die Python direkt beantwortet (Ohne KI-Aufruf)
+    if user_input_lower == "/menu":
+        direct_response = """**🐺 Wolf of Wüllnerstraße - EBWL-Tutor Menü:**
+        `/quiz [Thema]` - MC- & offene Fragen abfragen
+        `/klausur` - Probeklausur starten (Auswertung am Ende)
+        `/erklär [Konzept]` - Strukturierte Erklärung
+        `/rechnen [Thema] (/kurz)` - Rechenaufgabe Schritt-für-Schritt (oder nur Ergebnis)
+        `/karten` - Kompakte Karteikarten
+        `/zettel [Thema]` - Kompakter Lernzettel
+        `/merk [Thema]` - Eselsbrücken & Memory-Toolkit
+        `/level [basic/klausur/vertiefung]` - Schwierigkeit anpassen
+        `/stats` - Deinen Session-Fortschritt anzeigen
+        `/taktik` - Dynexite Klausurstrategie"""
+
+    elif user_input_lower.startswith("/level"):
+        neues_level = user_input_lower.replace("/level", "").strip()
+        if neues_level in ["basic", "klausur", "vertiefung"]:
+            st.session_state.level = neues_level
+            direct_response = f"✅ Schwierigkeitsgrad erfolgreich auf **{neues_level.upper()}** gesetzt!"
+        else:
+            direct_response = "❌ Bitte wähle: `/level basic`, `/level klausur` oder `/level vertiefung`."
+
+    # 2. Befehle, die eine strenge KI-Anweisung (System Override) erfordern
+    elif user_input_lower.startswith("/stats"):
+        system_override = "Der Nutzer ruft /stats auf. Analysiere den bisherigen Chatverlauf. Gib eine kompakte Schätzung seiner Trefferquote, nenne sein schwächstes Modul/Thema basierend auf seinen Fehlern und gib eine konkrete Lernempfehlung. Mach es in einer übersichtlichen Liste."
+    
+    elif user_input_lower.startswith("/taktik"):
+        system_override = "Der Nutzer ruft /taktik auf. Berate ihn aktiv zur Klausurtaktik (60 Min Dynexite EBWL). Gehe zwingend auf diese Punkte ein: 1. Dynexite-spezifische Tipps (MC-Strategie bei Unsicherheit, Navigation, Bookmarking). 2. Zeitmanagement (Puffer, Verteilung). 3. Reihenfolge der Aufgaben (Sichere zuerst). Mach es kompakt, strukturiert und motivierend."
+
+    elif user_input_lower.startswith("/rechnen"):
+        if "/kurz" in user_input_lower:
+            system_override = "Rechne das genannte Thema. Da /kurz aktiv ist: Zeige NUR das Ergebnis und die Schlüsselformel. Lasse alle Zwischenschritte weg."
+        else:
+            system_override = f"Rechne das genannte Thema. Mache jeden Rechenschritt EINZELN nachvollziehbar. Passe die Erklärung an das aktuelle Level ({st.session_state.level}) an: Bei 'basic' mit vielen textlichen Erläuterungen, bei 'klausur' extrem kompakt, bei 'vertiefung' ergänze alternative Lösungsansätze."
+    
+    elif user_input_lower.startswith("/klausur"):
+        if "auswerten" in user_input_lower or "beenden" in user_input_lower:
+            st.session_state.klausur_modus = False
+            system_override = "KLAUSUR BEENDET. Werte jetzt ALLE vorherigen Antworten des Nutzers in dieser Klausur-Session auf einmal aus. Gib eine Punktzahl, zeige die Fehler und erkläre die korrekten Lösungen streng aber fair."
+        else:
+            st.session_state.klausur_modus = True
+            system_override = "STARTE KLAUSURMODUS. Suche im Kontext nach hochgeladenen Altklausuren. Generiere basierend auf deren Stil, Umfang und Länge eine neue, prüfungsnahe Klausurfrage aus den Folien. WICHTIG: Gib die Lösung NICHT vor. Werte noch nichts aus. Stelle einfach die erste Frage!"
+
+    elif st.session_state.klausur_modus:
+        system_override = "KLAUSURMODUS AKTIV. Der Nutzer hat geantwortet. WICHTIGSTE REGEL: BEWERTE DIE ANTWORT NICHT! Sag nicht 'Richtig' oder 'Falsch'. Korrigiere noch nichts. Nimm die Antwort nur wortlos hin und stelle direkt die NÄCHSTE Klausurfrage. Erinnere den Nutzer am Ende kurz: 'Tippe /klausur auswerten, um die Klausur zu beenden und dein Ergebnis zu sehen.'"
+
+    elif user_input_lower.startswith("/erklär"):
+        system_override = "WENDE ZWINGEND DIESES FORMAT AN: 1. Kurzdefinition (1 Satz), 2. Ausführliche Erklärung (3-6 Sätze), 3. Formel (falls relevant), 4. Zahlenbeispiel, 5. Typische Klausurfalle (1-2 Sätze), 6. Folien-Referenz. Schließe mit: 'Verstanden? Vertiefen / Quiz / Lernzettel?'"
+
+    elif user_input_lower.startswith("/zettel"):
+        system_override = "Erstelle einen extrem kompakten, übersichtlichen Lernzettel zu diesem Thema (Definition, Erklärung, Beispiel, Formel, Klausurhinweis). Nutze Tabellen, sauberes Markdown und markiere Inhalte mit [Hochrelevant], [Wichtig] oder [Nice-to-know]."
+
+    elif user_input_lower.startswith("/karten"):
+        system_override = "Erstelle 3-5 kompakte, auf die Klausur getrimmte Karteikarten zum aktuellen Thema. Format: **Vorderseite (Frage):** ... | **Rückseite (Antwort):** ... (in knappen Stichpunkten)."
+
+    elif user_input_lower.startswith("/taktik"):
+        system_override = "Gib taktische Ratschläge für eine 60-minütige Dynexite-Klausur in EBWL. Themen: Zeitmanagement, MC-Strategie bei Unsicherheit, Navigation und Bookmarking. Sei prägnant."
+
+    elif user_input_lower.startswith("/quiz"):
+        system_override = "Stelle eine kompakte Multiple-Choice oder offene Frage zum gewünschten Thema. Format: Frage X/N | Modul | Level. Gib Optionen A-D an. Warte auf die Antwort."
+
+    elif user_input_lower.startswith("/rechnen"):
+        if "/kurz" in user_input_lower:
+            system_override = "Rechne das genannte Thema. Da /kurz aktiv ist: Zeige NUR das Ergebnis und die Schlüsselformel. Keine Zwischenschritte."
+        else:
+            system_override = "Rechne das genannte Thema. Zeige die Lösung Schritt-für-Schritt, sodass jeder Rechenschritt einzeln nachvollziehbar ist."
+    elif user_input_lower.startswith("/merk"):
+        system_override = """Generiere ein 'Memory-Toolkit' für das genannte Thema. Halte dich EXAKT an diese Struktur:
+        1. 🧠 **Der Reim / Das Akronym:** Erfinde einen griffigen Spruch oder ein Akronym, um sich die Bestandteile zu merken.
+        2. 🦄 **Die absurde Story:** Erfinde eine völlig übertriebene, bizarre oder lustige Mini-Geschichte (max. 3 Sätze), die die Fakten verknüpft. Das Gehirn merkt sich Absurdes am besten!
+        3. 👁️ **Die visuelle Brücke:** Beschreibe kurz, wie man sich das Konzept bildlich auf dem Klausur-Schmierblatt aufzeichnen oder vorstellen sollte (z.B. 'Stell dir einen Bruchstrich vor...').
+        Schließe mit: 'Welche Brücke hilft dir am meisten?'"""
+
+    # 3. Level-Modifikator hinzufügen
+    level_instruction = {
+        "basic": "Level BASIC: Erkläre alles sehr einfach. Reagiere bei Fehlern aufbauend ('Nicht ganz, denk nochmal an...').",
+        "klausur": "Level KLAUSUR: Antworte präzise auf RWTH-Klausurniveau. Reagiere bei Fehlern streng und sachlich ('Falsch. Richtig ist X, weil...').",
+        "vertiefung": "Level VERTIEFUNG: Ergänze Standard-BWL Wissen über die Folien hinaus (klar markiert). Stelle Sokratische Gegenfragen, wenn der Nutzer Fehler macht."
+    }
+    
+    FINAL_SYSTEM_PROMPT = SYSTEM_PROMPT + "\n" + level_instruction[st.session_state.level]
+
+    if system_override:
+        FINAL_SYSTEM_PROMPT += "\n\nSONDERBEFEHL FÜR DIESE NACHRICHT:\n" + system_override
+    if "XP-Drill-Modus" in lern_modus and not st.session_state.klausur_modus:
+        FINAL_SYSTEM_PROMPT += "\nXP VERGEBEN: Wenn inhaltlich richtig geantwortet wird, schreibe exakt '[+10 XP]' oder '[+20 XP]' ans Ende."
+
+    # ==========================================
+    # 💥 AUSFÜHRUNG
+    # ==========================================
+    if direct_response:
+        # Python antwortet direkt ohne API
+        st.markdown(direct_response)
+        st.session_state.messages.append({"role": "assistant", "content": direct_response})
+        st.rerun()
+    else:
+        # API Aufruf an Groq / Gemini
+        with st.chat_message("assistant"):
+            spinner_text = f"{st.session_state.current_tutor} analysiert... | 💡 {random.choice(LADE_ZITATE)}"
+            with st.spinner(spinner_text):
+                try:
+                    answer = ""
+                    # --- GROQ PFAD ---
+                    if "Groq" in ki_modus:
+                        if not groq_client: st.error("Groq API Key fehlt!")
+                        else:
+                            pages_dict = load_pdf_pages(gewaehlter_foliensatz)
+                            rag_context = get_rag_context(prompt, pages_dict)
+                            groq_messages = [{"role": "system", "content": FINAL_SYSTEM_PROMPT + "\n\nAUSZUG AUS DEM SKRIPT:\n" + rag_context}]
+                            for msg in st.session_state.messages[-8:]: groq_messages.append({"role": msg["role"], "content": msg["content"]})
                             
+                            completion = groq_client.chat.completions.create(
+                                model="llama-3.3-70b-versatile",
+                                messages=groq_messages
+                            )
+                            answer = completion.choices[0].message.content
+
+                    # --- GOOGLE PFAD ---
+                    else:
+                        if not google_client: st.error("Google API Key fehlt!")
+                        else:
+                            google_file = get_google_file(gewaehlter_foliensatz)
+                            history_for_api = [msg["content"] for msg in st.session_state.messages[-8:]]
+                            full_contents = []
+                            if google_file: full_contents.append(google_file)
+                            full_contents.extend(history_for_api)
+                            
+                            response = google_client.models.generate_content(
+                                model='gemini-2.5-flash',
+                                contents=full_contents,
+                                config=types.GenerateContentConfig(system_instruction=FINAL_SYSTEM_PROMPT)
+                            )
+                            answer = response.text
+                    
+                    # --- ANTWORT VERARBEITEN ---
+                    if answer:
+                        st.markdown(answer)
+                        st.session_state.messages.append({"role": "assistant", "content": answer})
+                        
+                        if "XP-Drill-Modus" in lern_modus and not st.session_state.klausur_modus:
+                            xp_matches = re.findall(r'\[\+(\d+)\s*XP\]', answer)
+                            if xp_matches:
+                                total_gained_xp = sum(int(match) for match in xp_matches)
+                                st.session_state.xp += total_gained_xp
+                                database[st.session_state.username]["xp"] = st.session_state.xp
+                                st.balloons()
+                                
                         database[st.session_state.username]["history"] = st.session_state.messages
                         save_data(database)
                         
-                        if xp_matches:
+                        # Rerun für XP Update
+                        if "XP-Drill-Modus" in lern_modus and not st.session_state.klausur_modus and re.findall(r'\[\+(\d+)\s*XP\]', answer):
                             time.sleep(2)
                             st.rerun()
-                    else:
-                        # Im freien Modus einfach nur die Historie geräuschlos wegspeichern
-                        database[st.session_state.username]["history"] = st.session_state.messages
-                        save_data(database)
-                        
-            except Exception as e:
-                st.error(f"❌ Fehler bei der Server-Anfrage: {e}")
+                            
+                except Exception as e:
+                    st.error(f"❌ Fehler bei der Server-Anfrage: {e}")
