@@ -137,7 +137,14 @@ if not st.session_state.username:
         st.markdown("---")
         
         new_user = st.text_input("Gib deinen Namen ein (z.B. Malte):")
-        tutor_choice = st.text_input("Name deines Tutors:", value="Jordan Belfort")
+        
+        # NEU: Der Tutor-Name und der Kommunikationsstil
+        col_t1, col_t2 = st.columns(2)
+        with col_t1:
+            tutor_choice = st.text_input("Name deines Tutors:", value="Jordan Belfort")
+        with col_t2:
+            tutor_style = st.selectbox("Kommunikationsstil:", ["Charakter & Slang", "Rein Sachlich (Klassische KI)"])
+            
         beta_code = st.text_input("Beta-Zugangscode:", type="password")
         
         st.write("") 
@@ -147,14 +154,16 @@ if not st.session_state.username:
             else:
                 st.session_state.username = new_user
                 if new_user not in database:
-                    database[new_user] = {"xp": 0, "tutor_name": tutor_choice, "history": [], "inventory": []}
+                    database[new_user] = {"xp": 0, "tutor_name": tutor_choice, "tutor_style": tutor_style, "history": [], "inventory": []}
                 else:
                     database[new_user]["tutor_name"] = tutor_choice
+                    database[new_user]["tutor_style"] = tutor_style
                     if "inventory" not in database[new_user]: database[new_user]["inventory"] = []
                 
                 save_data(database)
                 st.session_state.xp = database[new_user]["xp"]
                 st.session_state.current_tutor = tutor_choice 
+                st.session_state.tutor_style = tutor_style
                 st.session_state.messages = database[new_user].get("history", [])
                 st.rerun()
     st.stop()
@@ -224,10 +233,9 @@ with st.sidebar:
     st.title("🃏 Fahrzeug-Quartett")
     st.write(f"**Deine XP:** {st.session_state.xp}")
     
-   # Für den Pitch angepasst: 0 XP Kosten
-    if st.button("Lootbox öffnen (0 XP - Demo) 🎁", width="stretch"):
-        if st.session_state.xp >= 0: # Bedingung ist jetzt immer erfüllt
-            # st.session_state.xp -= 30  <-- Für die Demo auskommentiert
+    if st.button("Lootbox öffnen (-30 XP) 🎁", width="stretch"):
+        if st.session_state.xp >= 30:
+            st.session_state.xp -= 30 
             database[st.session_state.username]["xp"] = st.session_state.xp
             
             pool_leg = [k for k, v in KARTEN_KATALOG.items() if "Legendary" in v["rarity"]]
@@ -297,15 +305,25 @@ def get_rag_context(prompt, pages_dict, top_k=3):
 # --- 8. SYSTEM PROMPT ANPASSUNG JE NACH MODUS ---
 
 # Neue Session States für das Lernbot-Konzept
-if "level" not in st.session_state: 
-    st.session_state.level = "klausur" # Standardlevel
-if "klausur_modus" not in st.session_state: 
-    st.session_state.klausur_modus = False
+if "level" not in st.session_state: st.session_state.level = "klausur"
+if "klausur_modus" not in st.session_state: st.session_state.klausur_modus = False
+if "tutor_style" not in st.session_state: st.session_state.tutor_style = "Charakter & Slang"
+
+# --- DYNAMISCHE IDENTITÄT ---
+if "Sachlich" in st.session_state.tutor_style:
+    persona_text = f"""Du bist ein rein sachlicher, hochprofessioneller EBWL-Tutor an der RWTH Aachen.
+WICHTIGSTE REGEL: Nutze KEINEN Slang, keine Floskeln und spiele KEINE Rolle. Antworte wie eine klassische, hochintelligente KI: extrem präzise, trocken und direkt auf den Punkt.
+KEINE SCHIMPFWÖRTER: Verwende unter keinen Umständen vulgäre, beleidigende oder unangemessene Sprache. Absolute Professionalität ist Pflicht!"""
+else:
+    persona_text = f"""Du bist {st.session_state.current_tutor}, ein klausurorientierter, aber extrem charakterstarker Tutor für EBWL Studenten an der RWTH Aachen.
+WICHTIGSTE REGEL: Du musst die Persönlichkeit, den Slang und die Eigenarten von {st.session_state.current_tutor} PERFEKT imitieren!
+KEINE SCHIMPFWÖRTER: Auch wenn du einen harten Slang sprichst, ist vulgäre, beleidigende oder diskriminierende Sprache absolut verboten. Fluche nicht und bleibe immer jugendfrei!"""
+    
 
 # Identität
-SYSTEM_PROMPT = f"""Du bist {st.session_state.current_tutor}, ein seriöser, sachlicher, klausurorientierter aber charakterstarker Tutor für EBWL Studenten an der RWTH Aachen.
+SYSTEM_PROMPT = f"""{persona_text}
+
 DEINE MISSION: Lernende optimal auf ihre EBWL Klausuren vorbereiten, indem du präzise, verständliche und prüfungsrelevante Antworten gibst. Nutze den bereitgestellten Foliensatz als Hauptquelle für deine Erklärungen und beziehe dich immer darauf, wenn es relevant ist. Minimiere die Lernzeit und maximiere das Wissen.
-WICHTIGSTE REGEL: Du musst die Persönlichkeit, den Slang und die Eigenarten von {st.session_state.current_tutor} PERFEKT imitieren, dabei aber sachlich bleiben und nicht zu lang antworten!
 AKTUELLER FOLIENSATZ: {gewaehlter_foliensatz}
 
 # Fachlicher Kontext:
