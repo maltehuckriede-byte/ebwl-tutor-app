@@ -602,7 +602,11 @@ if prompt := st.chat_input(f"Nachricht oder /befehl eingeben..."):
     if system_override:
         FINAL_SYSTEM_PROMPT += "\n\nSONDERBEFEHL FÜR DIESE NACHRICHT:\n" + system_override
     if "XP-Drill-Modus" in lern_modus and not st.session_state.klausur_modus:
-        FINAL_SYSTEM_PROMPT += "\nXP VERGEBEN: Wenn inhaltlich richtig geantwortet wird, schreibe exakt '[+10 XP]' oder '[+20 XP]' ans Ende."
+        # XP nur erlauben, wenn KEIN Befehl genutzt wird ODER wenn es der /quiz Befehl ist
+        if not user_input_lower.startswith("/") or user_input_lower.startswith("/quiz"):
+            FINAL_SYSTEM_PROMPT += "\nXP VERGEBEN: Wenn inhaltlich richtig geantwortet wird, schreibe exakt '[+10 XP]' oder '[+20 XP]' ans Ende."
+        else:
+            FINAL_SYSTEM_PROMPT += "\nKEINE XP VERGEBEN: Dies ist eine Befehlsausführung, vergebe hierfür KEINE XP."
 
     # ==========================================
     # 💥 AUSFÜHRUNG
