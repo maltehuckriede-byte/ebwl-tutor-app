@@ -9,6 +9,7 @@ import random
 import re
 import time
 import base64
+from fpdf import FPDF
 
 # --- 1. SETUP & API-CLIENTS ---
 st.set_page_config(page_title="Wolf of Wüllnerstraße", page_icon="🐺", layout="wide")
@@ -100,6 +101,85 @@ def render_card_html(auto_name):
         </div>
     </div>
     """
+
+# ==========================================
+# 📄 HELPER FÜR PDF-GENERIERUNG (/zettel)
+# ==========================================
+def generate_pdf_bytes(thema, text):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", "B", 16)
+    
+    # Titel des Lernzettels
+    pdf.cell(0, 10, f"Lernzettel: {thema.replace('/zettel', '').strip().upper()}", ln=True, align="C")
+    pdf.ln(10)
+    
+    pdf.set_font("Arial", "", 11)
+    
+    # Pitch-Sicherer Zeilenumbruch & Umlaute-Schutz für Standard-PDF-Fonts
+    for line in text.split("\n"):
+        cleaned_line = line.replace("**", "").replace("#", "").replace("- ", "• ")
+        # Umlaute konvertieren, damit fpdf2 auf keinen Fall einen Encoding-Error wirft
+        cleaned_line = cleaned_line.replace("ä", "ae").replace("ö", "oe").replace("ü", "ue")
+        cleaned_line = cleaned_line.replace("Ä", "Ae").replace("Ö", "Oe").replace("Ü", "Ue").replace("ß", "ss")
+        
+        pdf.multi_cell(0, 6, cleaned_line)
+        
+    return pdf.output(dest="S") # Gibt das PDF direkt als abrufbare Bytes zurück
+
+# ==========================================
+# 🃏 HELPER FÜR INTERAKTIVE KARTEIKARTEN (/karten)
+# ==========================================
+def display_html_flashcards(ai_text):
+    # Regulärer Ausdruck, um Vorder- und Rückseiten aus dem KI-Text zu filtern
+    cards = re.findall(r'(?:Vorderseite|Frage)[:\s\(]*([^*|\n]+)(?:\s*\|\s*|\n+)(?:Rückseite|Antwort)[:\s\(]*([^*|\n\\]+)', ai_text, re.IGNORECASE)
+    
+    if not cards:
+        # Alternativer Fallback-Parser, falls das Format leicht abweicht
+        cards = re.findall(r'\*\*(.*?)\*\*.*?\n.*?\*\*(.*?)\*\*', ai_text)
+
+    if cards:
+        st.write("### 🃏 Deine interaktiven Karteikarten (Zum Wenden anklicken):")
+        cards_html = ""
+        
+        for i, (front, back) in enumerate(cards):
+            front_text = front.replace("):", "").strip()
+            back_text = back.replace("):", "").strip()
+            
+            # Jede Karte bekommt eine unsichtbare Checkbox. Klickt man das Label, dreht CSS die Karte um!
+            cards_html += f"""
+            <div class="card-box">
+                <input type="checkbox" id="card-{i}" class="flip-checkbox" style="display:none;">
+                <label for="card-{i}" class="flip-card">
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front">
+                            <div style="font-size: 11px; color: #3b82f6; font-weight: bold; text-transform: uppercase; margin-bottom: 8px;">❓ KREUZ / FRAGE</div>
+                            <div style="font-size: 14px; font-weight: 600; line-height: 1.4;">{front_text}</div>
+                        </div>
+                        <div class="flip-card-inner-back">
+                            <div style="font-size: 11px; color: #10b981; font-weight: bold; text-transform: uppercase; margin-bottom: 8px;">🎯 LÖSUNG / ANTWORT</div>
+                            <div style="font-size: 13px; line-height: 1.4; color: #333;">{back_text}</div>
+                        </div>
+                    </div>
+                </label>
+            </div>
+            """
+            
+        # Das komplette Styling für das 3D-Quartett-Feeling
+        full_html = f"""
+        <style>
+            .container {{ display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; font-family: Arial, sans-serif; padding: 10px; }}
+            .card-box {{ display: inline-block; margin: 10px; }}
+            .flip-card {{ display: block; width: 260px; height: 170px; perspective: 1000px; cursor: pointer; }}
+            .flip-card-inner {{ position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.5s; transform-style: preserve-3d; }}
+            .flip-checkbox:checked + .flip-card .flip-card-inner {{ transform: rotateY(180deg); }}
+            .flip-card-front, .flip-card-inner-back {{ position: absolute; width: 100%; height: 100%; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 12px; padding: 15px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }}
+            .flip-card-front {{ background: #1e293b; color: #f8fafc; border: 2px solid #3b82f6; }}
+            .flip-card-inner-back {{ background: #ffffff; color: #0f172a; transform: rotateY(180deg); border: 2px solid #10b981; }}
+        </style>
+        <div class="container">{cards_html}</div>
+        """
+        st.components.v1.html(full_html, height=210 if len(cards) <= 3 else 420, scrolling=True)
 
 # --- 4. PROFISAVEGAME-SYSTEM ---
 DATA_FILE = "savegames.json"
