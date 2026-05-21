@@ -110,27 +110,24 @@ def generate_pdf_bytes(thema, text):
     pdf.add_page()
     pdf.set_font("Arial", "B", 16)
     
-    # Titel des Lernzettels
     pdf.cell(0, 10, f"Lernzettel: {thema.replace('/zettel', '').strip().upper()}", ln=True, align="C")
     pdf.ln(10)
-    
     pdf.set_font("Arial", "", 11)
     
-    # Pitch-Sicherer Zeilenumbruch & Umlaute-Schutz für Standard-PDF-Fonts
-    for line in text.split("\n"):
-        cleaned_line = line.replace("**", "").replace("#", "").replace("- ", "• ")
+    # 1. Grobe Formatierungen glätten
+    safe_text = text.replace("**", "").replace("#", "").replace("•", "-").replace("*", "-")
+    
+    # 2. Umlaute manuell umschreiben (Sicherheitsnetz)
+    safe_text = safe_text.replace("ä", "ae").replace("ö", "oe").replace("ü", "ue")
+    safe_text = safe_text.replace("Ä", "Ae").replace("Ö", "Oe").replace("Ü", "Ue").replace("ß", "ss")
+    
+    for line in safe_text.split("\n"):
+        # 3. DER PITCH-SCHUTZ: Alles was Arial nicht drucken kann, wird durch ein '-' ersetzt.
+        # Kein Absturz mehr bei Emojis oder komischen Groq-Sonderzeichen!
+        clean_line = line.encode('latin-1', 'replace').decode('latin-1').replace("?", "-")
+        pdf.multi_cell(0, 6, clean_line)
         
-        # 1. Deutsche Umlaute sicher übersetzen
-        cleaned_line = cleaned_line.replace("ä", "ae").replace("ö", "oe").replace("ü", "ue")
-        cleaned_line = cleaned_line.replace("Ä", "Ae").replace("Ö", "Oe").replace("Ü", "Ue").replace("ß", "ss")
-        
-        # 2. DER RETTER: Alle Emojis und unbekannten Sonderzeichen gnadenlos herausfiltern!
-        # Wandelt den Text in Latin-1 um und ignoriert alles, was nicht reinpasst (z.B. Emojis).
-        cleaned_line = cleaned_line.encode('latin-1', 'ignore').decode('latin-1')
-        
-        pdf.multi_cell(0, 6, cleaned_line)
-        
-    return pdf.output(dest="S") # Gibt das PDF direkt als abrufbare Bytes zurück
+    return pdf.output() # In fpdf2 gibt das direkt die sauberen Bytes zurück
 
 # ==========================================
 # 🃏 HELPER FÜR INTERAKTIVE KARTEIKARTEN (/karten)
@@ -320,10 +317,9 @@ with st.sidebar:
     st.title("🃏 Fahrzeug-Quartett")
     st.write(f"**Deine XP:** {st.session_state.xp}")
     
-   # Für den Pitch angepasst: 0 XP Kosten
-    if st.button("Lootbox öffnen (0 XP - Demo) 🎁", width="stretch"):
-        if st.session_state.xp >= 0: # Bedingung ist jetzt immer erfüllt
-            # st.session_state.xp -= 30  <-- Für die Demo auskommentiert
+    if st.button("Lootbox öffnen (-30 XP) 🎁", width="stretch"):
+        if st.session_state.xp >= 30:
+            st.session_state.xp -= 30 
             database[st.session_state.username]["xp"] = st.session_state.xp
             
             pool_leg = [k for k, v in KARTEN_KATALOG.items() if "Legendary" in v["rarity"]]
@@ -479,8 +475,23 @@ LADE_ZITATE = [
 # --- 9. BENUTZEROBERFLÄCHE & CHAT LOGIK ---
 st.title(f"Willkommen in der Session, {st.session_state.username}! 🐺")
 
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]): st.markdown(message["content"])
+for i, message in enumerate(st.session_state.messages):
+    with st.chat_message(message["role"]): 
+        st.markdown(message["content"])
+        
+        # NEU: Lade den Button aus dem Gedächtnis, falls es ein Lernzettel war
+        if "pdf_data" in message:
+            st.download_button(
+                label="📄 Deinen Lernzettel als PDF herunterladen",
+                data=message["pdf_data"],
+                file_name=message["pdf_name"],
+                mime="application/pdf",
+                key=f"dl_btn_{i}"
+            )
+            
+        # NEU: Lade die Karteikarten aus dem Gedächtnis
+        if message.get("is_flashcard"):
+            display_html_flashcards(message["content"])
 
 st.markdown("<div style='text-align: center; font-size: 13px; color: #888; margin-top: 30px; margin-bottom: 5px;'>🐺 Wolf of Wüllnerstraße ist eine KI und kann Fehler machen. Bitte überprüfe wichtige Fakten.</div>", unsafe_allow_html=True)
 
@@ -633,9 +644,24 @@ if prompt := st.chat_input(f"Nachricht oder /befehl eingeben..."):
                     
                     # --- ANTWORT VERARBEITEN ---
                     if answer:
-                        st.markdown(answer)
-                        st.session_state.messages.append({"role": "assistant", "content": answer})
-                        
+                        # 1. Prüfen, ob ein PDF generiert werden soll
+                        pdf_bytes = None
+                        pdf_filename = None
+                        if prompt.strip().lower().startswith("/zettel"):
+                            pdf_bytes = generate_pdf_bytes(prompt, answer)
+                            pdf_filename = f"Lernzettel_{gewaehlter_foliensatz.replace('.pdf','')}.pdf"
+
+                        # 2. Nachricht inkl. aller Dateien ins Gedächtnis packen
+                        neue_nachricht = {"role": "assistant", "content": answer}
+                        if pdf_bytes:
+                            neue_nachricht["pdf_data"] = pdf_bytes
+                            neue_nachricht["pdf_name"] = pdf_filename
+                        if prompt.strip().lower().startswith("/karten"):
+                            neue_nachricht["is_flashcard"] = True
+                            
+                        st.session_state.messages.append(neue_nachricht)
+
+                        # 3. XP Berechnen
                         if "XP-Drill-Modus" in lern_modus and not st.session_state.klausur_modus:
                             xp_matches = re.findall(r'\[\+(\d+)\s*XP\]', answer)
                             if xp_matches:
@@ -647,10 +673,12 @@ if prompt := st.chat_input(f"Nachricht oder /befehl eingeben..."):
                         database[st.session_state.username]["history"] = st.session_state.messages
                         save_data(database)
                         
-                        # Rerun für XP Update
-                        if "XP-Drill-Modus" in lern_modus and not st.session_state.klausur_modus and re.findall(r'\[\+(\d+)\s*XP\]', answer):
-                            time.sleep(2)
-                            st.rerun()
-                            
+                        # 4. PITCH-TRICK: Ein kurzer Rerun baut die Seite neu auf und holt den 
+                        # Download-Button und die Karteikarten sicher aus der Historie (Block 2).
+                        time.sleep(1)
+                        st.rerun()
+
                 except Exception as e:
                     st.error(f"❌ Fehler bei der Server-Anfrage: {e}")
+                            
+                
