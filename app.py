@@ -328,9 +328,10 @@ with st.sidebar:
     st.title("🃏 Fahrzeug-Quartett")
     st.write(f"**Deine XP:** {st.session_state.xp}")
     
-    if st.button("Lootbox öffnen (-30 XP) 🎁", width="stretch"):
-        if st.session_state.xp >= 30:
-            st.session_state.xp -= 30 
+    # Für den Pitch angepasst: 0 XP Kosten
+    if st.button("Lootbox öffnen (0 XP - Demo) 🎁", width="stretch"):
+        if st.session_state.xp >= 0: # Bedingung ist jetzt immer erfüllt
+            # st.session_state.xp -= 30  <-- Für die Demo auskommentiert
             database[st.session_state.username]["xp"] = st.session_state.xp
             
             pool_leg = [k for k, v in KARTEN_KATALOG.items() if "Legendary" in v["rarity"]]
