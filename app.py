@@ -117,18 +117,29 @@ def generate_pdf_bytes(thema, text):
     # 1. Grobe Formatierungen glätten
     safe_text = text.replace("**", "").replace("#", "").replace("•", "-").replace("*", "-")
     
+    # 💥 DER BUGFIX FÜR DEN ABSTURZ:
+    # Markdown-Tabellen und irre lange Striche zerschneiden, damit das PDF umbrechen kann!
+    safe_text = safe_text.replace("|", " | ") # Zwingt Zeilenumbrüche bei Tabellen
+    safe_text = safe_text.replace("---", "-") # Verhindert unendlich lange Minus-Ketten
+    safe_text = safe_text.replace("\t", " ")  # Entfernt unsichtbare Tabulatoren
+    
     # 2. Umlaute manuell umschreiben (Sicherheitsnetz)
     safe_text = safe_text.replace("ä", "ae").replace("ö", "oe").replace("ü", "ue")
     safe_text = safe_text.replace("Ä", "Ae").replace("Ö", "Oe").replace("Ü", "Ue").replace("ß", "ss")
     
     for line in safe_text.split("\n"):
-        # 3. DER PITCH-SCHUTZ: Alles was Arial nicht drucken kann, wird durch ein '-' ersetzt.
-        # Kein Absturz mehr bei Emojis oder komischen Groq-Sonderzeichen!
+        # 3. Zeichen filtern, die Arial nicht kennt (Emojs etc. werden zu Bindestrichen)
         clean_line = line.encode('latin-1', 'replace').decode('latin-1').replace("?", "-")
+        
+        # 4. DER PANIK-SCHUTZ FÜR DEN PITCH: 
+        # Falls die KI ein völlig bizarres Wort ohne Leerzeichen erfindet (z.B. eine URL),
+        # kappen wir es gewaltsam nach 80 Zeichen, damit der Server niemals abstürzt.
+        if len(clean_line) > 80 and " " not in clean_line:
+            clean_line = " ".join([clean_line[i:i+80] for i in range(0, len(clean_line), 80)])
+            
         pdf.multi_cell(0, 6, clean_line)
         
-    return pdf.output() # In fpdf2 gibt das direkt die sauberen Bytes zurück
-
+    return pdf.output()
 # ==========================================
 # 🃏 HELPER FÜR INTERAKTIVE KARTEIKARTEN (/karten)
 # ==========================================
