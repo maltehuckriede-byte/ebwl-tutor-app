@@ -119,9 +119,14 @@ def generate_pdf_bytes(thema, text):
     # Pitch-Sicherer Zeilenumbruch & Umlaute-Schutz für Standard-PDF-Fonts
     for line in text.split("\n"):
         cleaned_line = line.replace("**", "").replace("#", "").replace("- ", "• ")
-        # Umlaute konvertieren, damit fpdf2 auf keinen Fall einen Encoding-Error wirft
+        
+        # 1. Deutsche Umlaute sicher übersetzen
         cleaned_line = cleaned_line.replace("ä", "ae").replace("ö", "oe").replace("ü", "ue")
         cleaned_line = cleaned_line.replace("Ä", "Ae").replace("Ö", "Oe").replace("Ü", "Ue").replace("ß", "ss")
+        
+        # 2. DER RETTER: Alle Emojis und unbekannten Sonderzeichen gnadenlos herausfiltern!
+        # Wandelt den Text in Latin-1 um und ignoriert alles, was nicht reinpasst (z.B. Emojis).
+        cleaned_line = cleaned_line.encode('latin-1', 'ignore').decode('latin-1')
         
         pdf.multi_cell(0, 6, cleaned_line)
         
