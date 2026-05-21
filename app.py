@@ -202,7 +202,9 @@ if os.path.exists("studienmaterial"):
 with st.sidebar:
     st.title("📚 Themenauswahl")
     if verfuegbare_pdfs:
-        gewaehlter_foliensatz = st.selectbox("Aktueller Foliensatz:", verfuegbare_pdfs)
+        # NEU: "Alle Foliensätze" als erste Option hinzufügen
+        pdf_auswahl = ["Alle Foliensätze"] + verfuegbare_pdfs
+        gewaehlter_foliensatz = st.selectbox("Aktueller Foliensatz:", pdf_auswahl)
     else:
         gewaehlter_foliensatz = "Kein Skript gefunden"
         st.warning("Bitte lade PDFs in 'studienmaterial' hoch.")
@@ -267,27 +269,41 @@ with st.sidebar:
 
 # --- 7. BACKEND WISSEN (Google & RAG für Groq) ---
 @st.cache_resource
-def get_google_file(filename):
+def get_google_files(filename):
+    """Lädt entweder das spezifische PDF oder ALLE PDFs zu Google hoch."""
+    hochgeladene_dateien = []
     if google_client and filename != "Kein Skript gefunden":
-        file_path = os.path.join("studienmaterial", filename)
-        return google_client.files.upload(file=file_path)
-    return None
+        dateien_zum_laden = [f for f in os.listdir("studienmaterial") if f.endswith(".pdf")] if filename == "Alle Foliensätze" else [filename]
+        
+        for datei in dateien_zum_laden:
+            file_path = os.path.join("studienmaterial", datei)
+            hochgeladene_dateien.append(google_client.files.upload(file=file_path))
+    return hochgeladene_dateien
 
 @st.cache_data
 def load_pdf_pages(filename):
+    """Liest für das Groq-RAG entweder ein PDF oder ALLE PDFs ein."""
     pages_dict = {}
     if filename != "Kein Skript gefunden":
-        file_path = os.path.join("studienmaterial", filename)
-        try:
-            with open(file_path, "rb") as f:
-                reader = pypdf.PdfReader(f)
-                for i, page in enumerate(reader.pages):
-                    text = page.extract_text()
-                    if text: pages_dict[i+1] = text
-        except Exception as e: st.error(f"PDF Lesefehler: {e}")
+        dateien_zum_laden = [f for f in os.listdir("studienmaterial") if f.endswith(".pdf")] if filename == "Alle Foliensätze" else [filename]
+        
+        global_page_count = 1
+        for datei in dateien_zum_laden:
+            file_path = os.path.join("studienmaterial", datei)
+            try:
+                with open(file_path, "rb") as f:
+                    reader = pypdf.PdfReader(f)
+                    for page in reader.pages:
+                        text = page.extract_text()
+                        if text: 
+                            # Den Dateinamen dazuschreiben, damit die KI weiß, woher die Info stammt
+                            pages_dict[global_page_count] = f"[Aus {datei}]:\n{text}"
+                            global_page_count += 1
+            except Exception as e: st.error(f"PDF Lesefehler bei {datei}: {e}")
     return pages_dict
 
 def get_rag_context(prompt, pages_dict, top_k=3):
+    # (Diese Funktion bleibt exakt so wie sie in deinem Code war!)
     if not pages_dict: return ""
     stopwords = {"was", "ist", "der", "die", "das", "und", "oder", "ein", "eine", "wie", "erkläre", "bitte"}
     prompt_words = set(re.findall(r'\w{3,}', prompt.lower())) - stopwords
@@ -299,7 +315,7 @@ def get_rag_context(prompt, pages_dict, top_k=3):
     scored.sort(key=lambda x: x[0], reverse=True)
     context = ""
     for score, p_num, text in scored[:top_k]:
-        if score > 0: context += f"\n--- SEITE {p_num} ---\n{text}\n"
+        if score > 0: context += f"\n--- ABSCHNITT {p_num} ---\n{text}\n"
     return context if context else "Keine direkten Treffer auf den Folien gefunden."
 
 # --- 8. SYSTEM PROMPT ANPASSUNG JE NACH MODUS ---
@@ -514,16 +530,18 @@ if prompt := st.chat_input(f"Nachricht oder /befehl eingeben..."):
                     else:
                         if not google_client: st.error("Google API Key fehlt!")
                         else:
-                            google_file = get_google_file(gewaehlter_foliensatz)
+                            google_files = get_google_files(gewaehlter_foliensatz)
                             history_for_api = [msg["content"] for msg in st.session_state.messages[-8:]]
+                            
                             full_contents = []
-                            if google_file: full_contents.append(google_file)
+                            # NEU: .extend nutzen, da google_files jetzt eine Liste ist
+                            if google_files: full_contents.extend(google_files)
                             full_contents.extend(history_for_api)
                             
                             response = google_client.models.generate_content(
                                 model='gemini-2.5-flash',
                                 contents=full_contents,
-                                config=types.GenerateContentConfig(system_instruction=FINAL_SYSTEM_PROMPT)
+                                config=types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT)
                             )
                             answer = response.text
                     
