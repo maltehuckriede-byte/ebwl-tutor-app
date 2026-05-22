@@ -480,8 +480,9 @@ LADE_ZITATE = [
     "Der Markt kann länger irrational bleiben, als du liquide. - Keynes",
     "Zinseszins ist das achte Weltwunder. - Einstein",
     "Das Geheimnis des Erfolgs ist, den Standpunkt des anderen zu verstehen. - Henry Ford",
-    "Risiko entsteht dann, wenn man nicht weiß, was man tut. - Warren Buffett"
-    "Erfolg hat drei Buchstaben: TUN. - Goethe"
+    "Risiko entsteht dann, wenn man nicht weiß, was man tut. - Warren Buffett",
+    "Erfolg hat drei Buchstaben: TUN. - Goethe",
+    "Wer dauerhaften Erfolg will, muss sein Verhalten mit der Zeit ändern. - Niccolò Machiavelli"
 ]
 
 # --- 9. BENUTZEROBERFLÄCHE & CHAT LOGIK ---
