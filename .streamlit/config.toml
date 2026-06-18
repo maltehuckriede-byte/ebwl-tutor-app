@@ -1,19 +1,16 @@
 [theme]
-# Wir sagen Streamlit, dass dies grundsätzlich ein Dark-Mode ist. 
-# Dadurch färbt Streamlit interne Elemente (wie Dropdowns oder Textfelder) automatisch passend dunkel ein.
 base = "dark"
 
-# Euer RWTH-Blau für die primären Buttons (z.B. "Lern-Sitzung starten")
-primaryColor = "#00549F"
+# Ein leuchtendes, modernes Saphirblau - perfekt ablesbar und frisch im Dark-Mode!
+primaryColor = "#3B82F6"
 
-# Das tiefe Nachtblau für den Haupt-Hintergrund (Chat & Dashboard)
-backgroundColor = "#0F172A"
+# Der Hintergrund: Ein extrem sattes, fast schwarzes Tiefen-Graublau (Obsidian)
+backgroundColor = "#0B0F19"
 
-# Das weiche Dunkelgrau-Blau für die Seitenleiste und die Dashboard-Kacheln
-secondaryBackgroundColor = "#1E293B"
+# Die Seitenleiste & Kacheln: Klar abgehoben durch ein helleres Nachtblau
+secondaryBackgroundColor = "#1A2235"
 
-# Ein sanftes, blendfreies Weiß für perfekte Lesbarkeit
+# Brillantes, weiches Weiß für perfekte Lesbarkeit ohne zu blenden
 textColor = "#F8FAFC"
 
-# Moderne, cleane Schriftart
 font = "sans serif"
