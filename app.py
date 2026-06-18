@@ -201,6 +201,10 @@ if "messages" not in st.session_state: st.session_state.messages = []
 if "level" not in st.session_state: st.session_state.level = "Solide"
 if "klausur_modus" not in st.session_state: st.session_state.klausur_modus = False
 if "active_mode" not in st.session_state: st.session_state.active_mode = None
+if "klausur_modus" not in st.session_state: st.session_state.klausur_modus = False
+if "active_mode" not in st.session_state: st.session_state.active_mode = None
+# 🚨 NEU: Der Schlüssel, um den Bilder-Uploader zu leeren
+if "uploader_key" not in st.session_state: st.session_state.uploader_key = 0
 
 # --- 4. DYNAMISCHES SKRIPT VERZEICHNIS ---
 verfuegbare_pdfs = []
@@ -558,7 +562,8 @@ with st.popover("➕ Lern-Aktionen & Upload"):
     st.markdown("---")
     
     # 🚨 NEU: Der Datei-Uploader für Bilder (Kapitel 9)
-    uploaded_image = st.file_uploader("📸 Bild / Skizze hochladen:", type=["png", "jpg", "jpeg"])
+    # 🚨 NEU: Der Uploader nutzt jetzt den dynamischen Session-Key
+    uploaded_image = st.file_uploader("📸 Bild / Skizze hochladen:", type=["png", "jpg", "jpeg"], key=st.session_state.uploader_key)
     
     st.markdown("---")
     if st.button("📄 Lernzettel erstellen", use_container_width=True): action = "/zettel"
@@ -679,8 +684,8 @@ if user_input or uploaded_image:
                         if uploaded_image:
                             img = Image.open(uploaded_image)
                             full_contents.append(img)
-                            # Instruktion aus Kapitel 9 anhängen
-                            FINAL_SYSTEM_PROMPT += "\n\nREGEL FÜR BILDER: Wenn das Bild unklar oder unleserlich ist, sag das offen und erfinde keine Inhalte."
+                            # 🚨 NEU: Strenge Anti-Halluzinations-Regel aus eurem Konzept!
+                            FINAL_SYSTEM_PROMPT += "\n\nREGEL FÜR BILDER: Analysiere AUSSCHLIESSLICH das hochgeladene Bild. Wenn das Bild unklar, unleserlich oder keine sinnvolle BWL-Skizze ist, sag das offen und bitte um einen Reupload. Erfinde UNTER KEINEN UMSTÄNDEN Bildinhalte und fasse stattdessen NICHT einfach das Skript zusammen!"
 
                         full_contents.extend(history_for_api)
                         
@@ -724,6 +729,13 @@ if user_input or uploaded_image:
 
                     database[st.session_state.username]["history"] = st.session_state.messages
                     save_data(database)
+
+                    database[st.session_state.username]["history"] = st.session_state.messages
+                    save_data(database)
+                    
+                    # 🚨 NEU: Bild aus dem Zwischenspeicher löschen, um Endlosschleife zu verhindern
+                    if uploaded_image:
+                        st.session_state.uploader_key += 1
                     
                     time.sleep(0.5)
                     st.rerun()
