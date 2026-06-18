@@ -508,6 +508,10 @@ if st.session_state.current_page == "chat":
                 if cards_found:
                     # Wir entfernen die unschönen Rohtext-Zeilen aus der Chat-Blase
                     clean_text = re.sub(r'(?i).*(?:Vorderseite|Frage|Rückseite|Antwort).*', '', message["content"])
+                    
+                    # 🚨 FIX: Verwaiste Markdown-Trennlinien (wie --- oder ***) entfernen
+                    clean_text = re.sub(r'[-_*]{3,}', '', clean_text)
+                    
                     clean_text = re.sub(r'\n\s*\n', '\n\n', clean_text).strip()
                     
                     # Intro-Satz des Bots rendern, falls vorhanden
