@@ -115,26 +115,60 @@ def display_html_flashcards(ai_text):
         st.html(f'<div style="min-height: 250px;">{full_html}</div>')
 
 # ==========================================
-# 🎨 PREMIUM HTML/CSS DASHBOARD GENERATOR (DYNAMIC THEME)
+# 🎨 PREMIUM HTML/CSS DASHBOARD GENERATOR (OBSIDIAN THEME)
 # ==========================================
 def render_premium_dashboard(username, total_q, accuracy, level, progress_data):
     
-    # Wir nutzen var(--secondary-background-color) und var(--text-color) von Streamlit,
-    # dadurch passt sich das Design automatisch eurem neuen Beige (oder dem Dark-Mode) an!
-    
+    # 🌟 NEU: Wir injizieren echtes CSS für Hover-Effekte und knackige Ränder!
+    css = """
+    <style>
+        .kpi-card {
+            flex: 1; min-width: 200px; 
+            background: var(--secondary-background-color); 
+            border-radius: 16px; padding: 24px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4); 
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            transition: transform 0.2s ease;
+        }
+        .kpi-card:hover { transform: translateY(-3px); border-color: rgba(255,255,255,0.15); }
+        
+        .dash-card {
+            background: var(--secondary-background-color); 
+            border-radius: 16px; padding: 20px; 
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3); 
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            transition: all 0.3s ease;
+        }
+        /* Der Magische Hover-Effekt: Kachel hebt sich und Rand leuchtet blau */
+        .dash-card:hover {
+            transform: translateY(-4px); 
+            box-shadow: 0 15px 30px rgba(0,0,0,0.5);
+            border-color: var(--primary-color);
+        }
+        
+        .progress-track {
+            width: 100%; background-color: rgba(0,0,0,0.3); 
+            border-radius: 8px; height: 8px; margin-bottom: 15px; overflow: hidden; 
+            border: inset 1px rgba(0,0,0,0.5);
+        }
+        .kpi-label { color: var(--text-color); opacity: 0.6; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+        .kpi-value { color: var(--text-color); font-size: 36px; font-weight: 800; margin-top: 8px; }
+    </style>
+    """
+
     kpi_html = f"""
     <div style="display: flex; gap: 20px; margin-bottom: 30px; flex-wrap: wrap;">
-        <div style="flex: 1; min-width: 200px; background: var(--secondary-background-color); border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-top: 4px solid var(--primary-color);">
-            <div style="color: var(--text-color); opacity: 0.6; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Beantwortete Fragen</div>
-            <div style="color: var(--text-color); font-size: 36px; font-weight: 800; margin-top: 8px;">{total_q}</div>
+        <div class="kpi-card" style="border-top: 4px solid var(--primary-color);">
+            <div class="kpi-label">Beantwortete Fragen</div>
+            <div class="kpi-value">{total_q}</div>
         </div>
-        <div style="flex: 1; min-width: 200px; background: var(--secondary-background-color); border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-top: 4px solid #57AB27;">
-            <div style="color: var(--text-color); opacity: 0.6; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Trefferquote</div>
-            <div style="color: var(--text-color); font-size: 36px; font-weight: 800; margin-top: 8px;">{accuracy}<span style="font-size: 20px; opacity: 0.5;"> %</span></div>
+        <div class="kpi-card" style="border-top: 4px solid #10B981;">
+            <div class="kpi-label">Trefferquote</div>
+            <div class="kpi-value">{accuracy}<span style="font-size: 20px; opacity: 0.5;"> %</span></div>
         </div>
-        <div style="flex: 1; min-width: 200px; background: var(--secondary-background-color); border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-top: 4px solid #8B5CF6;">
-            <div style="color: var(--text-color); opacity: 0.6; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Aktuelles Cap</div>
-            <div style="color: var(--text-color); font-size: 36px; font-weight: 800; margin-top: 8px;">{level}</div>
+        <div class="kpi-card" style="border-top: 4px solid #8B5CF6;">
+            <div class="kpi-label">Aktuelles Cap</div>
+            <div class="kpi-value">{level}</div>
         </div>
     </div>
     """
@@ -143,7 +177,7 @@ def render_premium_dashboard(username, total_q, accuracy, level, progress_data):
     
     if not progress_data:
         cards_html += """
-        <div style="grid-column: 1 / -1; background: var(--secondary-background-color); border-radius: 16px; padding: 40px; text-align: center; border: 1px dashed rgba(128, 128, 128, 0.3);">
+        <div style="grid-column: 1 / -1; background: var(--secondary-background-color); border-radius: 16px; padding: 40px; text-align: center; border: 1px dashed rgba(255,255,255,0.2);">
             <h3 style="color: var(--text-color); margin: 0; opacity: 0.8;">Noch keine Daten vorhanden</h3>
             <p style="color: var(--text-color); opacity: 0.6; font-size: 14px;">Starte deine erste Sitzung, um deinen Fortschritt hier zu sehen.</p>
         </div>"""
@@ -153,17 +187,18 @@ def render_premium_dashboard(username, total_q, accuracy, level, progress_data):
             score_percent = int(score * 100)
             clean_name = pdf_name.replace(".pdf", "").replace("_", " ")
             
-            bar_color = "#57AB27" if score_percent >= 80 else ("#F59E0B" if score_percent >= 50 else "#EF4444")
+            # Frische, leuchtende Farben für euer Ampelsystem 
+            bar_color = "#10B981" if score_percent >= 80 else ("#F59E0B" if score_percent >= 50 else "#EF4444") [cite: 877]
             
             cards_html += f"""
-            <div style="background: var(--secondary-background-color); border-radius: 16px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); border: 1px solid rgba(128, 128, 128, 0.1);">
+            <div class="dash-card">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
                     <div style="font-weight: 600; color: var(--text-color); font-size: 16px; line-height: 1.3;">{clean_name}</div>
-                    <div style="background: var(--background-color); padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; color: {bar_color};">{score_percent}%</div>
+                    <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; color: {bar_color};">{score_percent}%</div>
                 </div>
                 
-                <div style="width: 100%; background-color: var(--background-color); border-radius: 8px; height: 8px; margin-bottom: 15px; overflow: hidden; border: 1px solid rgba(128, 128, 128, 0.1);">
-                    <div style="width: {score_percent}%; background-color: {bar_color}; height: 100%; border-radius: 8px; transition: width 1s ease-in-out;"></div>
+                <div class="progress-track">
+                    <div style="width: {score_percent}%; background-color: {bar_color}; height: 100%; border-radius: 8px; transition: width 1s ease-in-out; box-shadow: 0 0 10px {bar_color};"></div>
                 </div>
                 
                 <div style="display: flex; justify-content: space-between; color: var(--text-color); opacity: 0.6; font-size: 12px;">
@@ -174,7 +209,7 @@ def render_premium_dashboard(username, total_q, accuracy, level, progress_data):
             """
     cards_html += '</div>'
 
-    st.html(kpi_html + cards_html)
+    st.html(css + kpi_html + cards_html)
 
 # --- 2. DATENBANK-SYSTEM & LERNFORTSCHRITT ---
 DATA_FILE = "savegames.json"
