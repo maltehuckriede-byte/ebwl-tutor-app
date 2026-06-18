@@ -115,36 +115,37 @@ def display_html_flashcards(ai_text):
         st.html(f'<div style="min-height: 250px;">{full_html}</div>')
 
 # ==========================================
-# 🎨 PREMIUM HTML/CSS DASHBOARD GENERATOR
+# 🎨 PREMIUM HTML/CSS DASHBOARD GENERATOR (DYNAMIC THEME)
 # ==========================================
 def render_premium_dashboard(username, total_q, accuracy, level, progress_data):
     
-    # 1. Die Bento-Box KPIs
+    # Wir nutzen var(--secondary-background-color) und var(--text-color) von Streamlit,
+    # dadurch passt sich das Design automatisch eurem neuen Beige (oder dem Dark-Mode) an!
+    
     kpi_html = f"""
     <div style="display: flex; gap: 20px; margin-bottom: 30px; flex-wrap: wrap;">
-        <div style="flex: 1; min-width: 200px; background: linear-gradient(145deg, #1e293b, #0f172a); border-radius: 16px; padding: 24px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3); border-top: 4px solid #00549F;">
-            <div style="color: #94A3B8; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Beantwortete Fragen</div>
-            <div style="color: #F8FAFC; font-size: 36px; font-weight: 800; margin-top: 8px;">{total_q}</div>
+        <div style="flex: 1; min-width: 200px; background: var(--secondary-background-color); border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-top: 4px solid var(--primary-color);">
+            <div style="color: var(--text-color); opacity: 0.6; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Beantwortete Fragen</div>
+            <div style="color: var(--text-color); font-size: 36px; font-weight: 800; margin-top: 8px;">{total_q}</div>
         </div>
-        <div style="flex: 1; min-width: 200px; background: linear-gradient(145deg, #1e293b, #0f172a); border-radius: 16px; padding: 24px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3); border-top: 4px solid #57AB27;">
-            <div style="color: #94A3B8; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Trefferquote</div>
-            <div style="color: #F8FAFC; font-size: 36px; font-weight: 800; margin-top: 8px;">{accuracy}<span style="font-size: 20px; color: #64748B;"> %</span></div>
+        <div style="flex: 1; min-width: 200px; background: var(--secondary-background-color); border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-top: 4px solid #57AB27;">
+            <div style="color: var(--text-color); opacity: 0.6; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Trefferquote</div>
+            <div style="color: var(--text-color); font-size: 36px; font-weight: 800; margin-top: 8px;">{accuracy}<span style="font-size: 20px; opacity: 0.5;"> %</span></div>
         </div>
-        <div style="flex: 1; min-width: 200px; background: linear-gradient(145deg, #1e293b, #0f172a); border-radius: 16px; padding: 24px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3); border-top: 4px solid #8B5CF6;">
-            <div style="color: #94A3B8; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Aktuelles Cap</div>
-            <div style="color: #F8FAFC; font-size: 36px; font-weight: 800; margin-top: 8px;">{level}</div>
+        <div style="flex: 1; min-width: 200px; background: var(--secondary-background-color); border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-top: 4px solid #8B5CF6;">
+            <div style="color: var(--text-color); opacity: 0.6; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Aktuelles Cap</div>
+            <div style="color: var(--text-color); font-size: 36px; font-weight: 800; margin-top: 8px;">{level}</div>
         </div>
     </div>
     """
 
-    # 2. Die interaktiven Kapitel-Kacheln (Grid)
     cards_html = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; margin-bottom: 40px;">'
     
     if not progress_data:
         cards_html += """
-        <div style="grid-column: 1 / -1; background: #1e293b; border-radius: 16px; padding: 40px; text-align: center; border: 1px dashed #475569;">
-            <h3 style="color: #94A3B8; margin: 0;">Noch keine Daten vorhanden</h3>
-            <p style="color: #64748b; font-size: 14px;">Starte deine erste Sitzung, um deinen Fortschritt hier zu sehen.</p>
+        <div style="grid-column: 1 / -1; background: var(--secondary-background-color); border-radius: 16px; padding: 40px; text-align: center; border: 1px dashed rgba(128, 128, 128, 0.3);">
+            <h3 style="color: var(--text-color); margin: 0; opacity: 0.8;">Noch keine Daten vorhanden</h3>
+            <p style="color: var(--text-color); opacity: 0.6; font-size: 14px;">Starte deine erste Sitzung, um deinen Fortschritt hier zu sehen.</p>
         </div>"""
     else:
         for pdf_name, stats in progress_data.items():
@@ -152,29 +153,27 @@ def render_premium_dashboard(username, total_q, accuracy, level, progress_data):
             score_percent = int(score * 100)
             clean_name = pdf_name.replace(".pdf", "").replace("_", " ")
             
-            # Farb-Logik für den Fortschrittsbalken
             bar_color = "#57AB27" if score_percent >= 80 else ("#F59E0B" if score_percent >= 50 else "#EF4444")
             
             cards_html += f"""
-            <div style="background: #1e293b; border-radius: 16px; padding: 20px; transition: transform 0.2s, box-shadow 0.2s; cursor: default; border: 1px solid #334155;">
+            <div style="background: var(--secondary-background-color); border-radius: 16px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); border: 1px solid rgba(128, 128, 128, 0.1);">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
-                    <div style="font-weight: 600; color: #F8FAFC; font-size: 16px; line-height: 1.3;">{clean_name}</div>
-                    <div style="background: #0f172a; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; color: {bar_color};">{score_percent}%</div>
+                    <div style="font-weight: 600; color: var(--text-color); font-size: 16px; line-height: 1.3;">{clean_name}</div>
+                    <div style="background: var(--background-color); padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; color: {bar_color};">{score_percent}%</div>
                 </div>
                 
-                <div style="width: 100%; background-color: #0f172a; border-radius: 8px; height: 8px; margin-bottom: 15px; overflow: hidden;">
+                <div style="width: 100%; background-color: var(--background-color); border-radius: 8px; height: 8px; margin-bottom: 15px; overflow: hidden; border: 1px solid rgba(128, 128, 128, 0.1);">
                     <div style="width: {score_percent}%; background-color: {bar_color}; height: 100%; border-radius: 8px; transition: width 1s ease-in-out;"></div>
                 </div>
                 
-                <div style="display: flex; justify-content: space-between; color: #64748B; font-size: 12px;">
+                <div style="display: flex; justify-content: space-between; color: var(--text-color); opacity: 0.6; font-size: 12px;">
                     <span>Versuche: {stats.get('attempts', 0)}</span>
-                    <span>Level: <b style="color: #94A3B8;">{stats.get('max_level', 'Einsteiger')}</b></span>
+                    <span>Level: <b style="opacity: 0.9;">{stats.get('max_level', 'Einsteiger')}</b></span>
                 </div>
             </div>
             """
     cards_html += '</div>'
 
-    # Alles zusammenfügen und rendern
     st.html(kpi_html + cards_html)
 
 # --- 2. DATENBANK-SYSTEM & LERNFORTSCHRITT ---
