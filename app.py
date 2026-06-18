@@ -35,10 +35,17 @@ def generate_pdf_bytes(thema, text):
     safe_text = safe_text.replace("ä", "ae").replace("ö", "oe").replace("ü", "ue")
     safe_text = safe_text.replace("Ä", "Ae").replace("Ö", "Oe").replace("Ü", "Ue").replace("ß", "ss")
     
+    # 🚨 FIX: Verhindert den "Not enough horizontal space"-Crash bei langen KI-Trennlinien
+    safe_text = re.sub(r'[-_=#]{5,}', '---', safe_text)
+    
     for line in safe_text.split("\n"):
         clean_line = line.encode('latin-1', 'replace').decode('latin-1').replace("?", "-")
-        pdf.multi_cell(0, 6, clean_line)
-        
+        try:
+            pdf.multi_cell(0, 6, clean_line)
+        except Exception:
+            # Fallback: Falls ein einzelnes "Wort" das Blatt sprengt, wird es abgeschnitten
+            pdf.multi_cell(0, 6, clean_line[:80] + " [...]")
+            
     return pdf.output()
 
 # ==========================================
@@ -96,8 +103,8 @@ def display_html_flashcards(ai_text):
         </style>
         <div class="container">{cards_html}</div>
         """
-        # Moderne Render-Methode (Post-Juni 2026), um den Deprecation-Error zu vermeiden
-        st.markdown(f'<div style="height: {230 if len(cards) <= 3 else 460}px; overflow-y: auto;">{full_html}</div>', unsafe_allow_html=True)
+        # 🚨 FIX: Native HTML-Render-Methode, die nicht vom Markdown-Parser zerstört wird
+        st.html(f'<div style="height: {230 if len(cards) <= 3 else 460}px; overflow-y: auto;">{full_html}</div>')
 
 # --- 2. DATENBANK-SYSTEM & LERNFORTSCHRITT ---
 DATA_FILE = "savegames.json"
@@ -269,6 +276,36 @@ if st.session_state.current_page == "dashboard":
         if st.button("➡️ Lern-Sitzung starten", use_container_width=True, type="primary"):
             st.session_state.current_page = "chat"
             st.rerun()
+
+    # ---------------------------------------------------------
+    # 🔍 NEU: DETAILLIERTE FORMEL-ANALYSE & SIMULATION
+    # ---------------------------------------------------------
+    with st.expander("🔍 Detaillierte Formel-Analyse & Simulation"):
+        st.markdown("### Wie berechnet der Bot deinen Fortschritt?")
+        st.latex(r"\text{Fortschritt} = \text{Trefferquote} \times \text{Level-Cap} \times \text{Sicherheit} \times \text{Aktualität}")
+        
+        st.info("Dein Balken füllt sich nicht einfach durch reines Klicken. Wahres Verständnis (Klausurniveau + absolute Sicherheit) wird am stärksten belohnt. Geratenes Wissen wird abgewertet.")
+        
+        st.markdown("---")
+        st.markdown("**🎮 Simuliere deine nächste Frage:**")
+        
+        sim_col1, sim_col2, sim_col3 = st.columns(3)
+        with sim_col1:
+            sim_correct = st.radio("Ergebnis der Antwort:", ["Richtig", "Falsch"])
+        with sim_col2:
+            sim_level = st.selectbox("Gespieltes Level:", ["Einsteiger (0.4)", "Solide (0.75)", "Klausurniveau (1.0)"])
+        with sim_col3:
+            sim_conf = st.selectbox("Eigene Sicherheit:", ["Sicher (1.0)", "Unsicher (0.75)", "Geraten (0.4)"])
+            
+        # Simpler Preview-Rechenweg für den User
+        sim_treffer = 1.0 if sim_correct == "Richtig" else 0.0
+        sim_lvl_val = {"Einsteiger (0.4)": 0.4, "Solide (0.75)": 0.75, "Klausurniveau (1.0)": 1.0}[sim_level]
+        sim_conf_val = {"Sicher (1.0)": 1.0, "Unsicher (0.75)": 0.75, "Geraten (0.4)": 0.4}[sim_conf]
+        
+        sim_result = sim_treffer * sim_lvl_val * sim_conf_val * 1.0
+        
+        st.markdown(f"*(Dies ist eine isolierte Vorschau. Ein einzelner Versuch unter diesen Bedingungen ergibt einen Netto-Fortschrittswert von **{int(sim_result * 100)} %**)*")
+    # ---------------------------------------------------------
             
     st.stop() # Stoppt hier, damit der Chat nicht drunter gerendert wird
 
@@ -609,5 +646,3 @@ if user_input:
 
             except Exception as e:
                 st.error(f"❌ Fehler bei der Server-Anfrage: {e}")
-                            
-                
