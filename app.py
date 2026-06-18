@@ -295,65 +295,71 @@ if st.session_state.current_page == "dashboard":
     st.markdown(f"Willkommen zurück, **{st.session_state.username}**. Hier ist dein aktueller Wissensstand basierend auf deinen Antworten und deiner Selbsteinschätzung.")
     st.write("")
     
-    # Nutzerdaten abrufen
+    # Echte Nutzerdaten aus deiner Savegame-Datenbank abrufen
     user_data = database.get(st.session_state.username, {})
     progress_data = user_data.get("progress", {})
     
-    # Globale KPIs berechnen
+    # Globale KPIs dynamisch berechnen
     total_questions = sum(p.get("attempts", 0) for p in progress_data.values())
     total_correct = sum(p.get("correct", 0) for p in progress_data.values())
     global_accuracy = int((total_correct / total_questions * 100)) if total_questions > 0 else 0
     
-    # 3-Spalten-Layout für eine cleane "Web-App" Optik
+    # 1. KPI-Reihe in sauberen Kacheln (Kompakt & Professionell via Container-Borders)
     kpi1, kpi2, kpi3 = st.columns(3)
-    kpi1.metric(label="Beantwortete Fragen", value=total_questions)
-    kpi2.metric(label="Trefferquote (Global)", value=f"{global_accuracy} %")
-    kpi3.metric(label="Aktuelles Level", value=st.session_state.level)
+    with kpi1:
+        with st.container(border=True):
+            st.metric(label="Beantwortete Fragen", value=total_questions)
+    with kpi2:
+        with st.container(border=True):
+            st.metric(label="Trefferquote (Global)", value=f"{global_accuracy} %")
+    with kpi3:
+        with st.container(border=True):
+            st.metric(label="Aktuelles Level", value=st.session_state.level)
     
-    st.markdown("---")
+    st.write("") # Luft zum Atmen statt harter Trennlinie
     st.subheader("📚 Fortschritt pro Kapitel")
     
     if not progress_data:
         st.info("Du hast noch keine Fragen beantwortet. Starte eine Sitzung, um deinen Fortschritt zu füllen!")
     else:
+        # Dynamische Schleife durch deine echten Kapiteldaten
         for pdf_name, stats in progress_data.items():
-            # Die harte, ungeschönte Berechnung aufrufen
             score = calculate_progress(stats)
             score_percent = int(score * 100)
             
-            # Ampelfarben nach EBWL-Konzept
+            # Ampelfarben nach deinem EBWL-Konzept
             if score_percent >= 80: color = "🟢"
             elif score_percent >= 50: color = "🟡"
             else: color = "🔴"
             
-            col_text, col_bar = st.columns([1, 2])
-            with col_text:
-                clean_name = pdf_name.replace(".pdf", "").replace("_", " ")
-                st.markdown(f"**{color} {clean_name}**")
-                st.caption(f"Cap-Level: {stats.get('max_level', 'Einsteiger')} | Versuche: {stats.get('attempts', 0)}")
-            with col_bar:
-                st.progress(score)
+            # 2. Kapitel-Layout linearisieren (Modernes Zeilen-Grid)
+            with st.container(border=True):
+                cap_col1, cap_col2, cap_col3 = st.columns([3, 5, 2])
                 
-    st.markdown("---")
-    col_start, col_empty = st.columns([1, 3])
-    with col_start:
-        # Der Button, der den User in den Chat leitet
-        if st.button("➡️ Lern-Sitzung starten", use_container_width=True, type="primary"):
-            st.session_state.current_page = "chat"
-            st.rerun()
+                with cap_col1:
+                    clean_name = pdf_name.replace(".pdf", "").replace("_", " ")
+                    st.markdown(f"**{color} {clean_name}**")
+                    
+                with cap_col2:
+                    # Der Fortschrittsbalken sitzt perfekt zentriert in der Mitte
+                    st.progress(score)
+                    
+                with cap_col3:
+                    # Metadaten sauber rechtsbündig formatiert
+                    st.markdown(f"<div style='text-align: right; color: gray; font-size: 0.85rem;'>Level: <b>{stats.get('max_level', 'Einsteiger')}</b><br>Versuche: {stats.get('attempts', 0)}</div>", unsafe_allow_html=True)
+                
+    st.write("") 
 
     # ---------------------------------------------------------
-    # 🔍 NEU: DETAILLIERTE FORMEL-ANALYSE & ECHTER SIMULATOR
+    # 🔍 DETAILLIERTE FORMEL-ANALYSE & ECHTER SIMULATOR (Unverändert, aber optisch eingebettet)
     # ---------------------------------------------------------
     with st.expander("🔍 Simulator: Wie wirkt sich deine nächste Antwort aus?"):
         st.info("Dieser Simulator lädt deinen **echten, aktuellen Lernstand** für das ausgewählte Kapitel. Er zeigt dir exakt, wie sich dein Gesamtfortschritt verändert, wenn du jetzt eine weitere Frage beantwortest.")
         
-        # 🚨 FIX: Da die Seitenleiste auf dem Dashboard nicht existiert,
-        # wählen wir das Thema für die Simulation direkt hier aus!
         bekannte_themen = list(progress_data.keys()) if progress_data else ["Bisher keine Daten"]
         sim_thema = st.selectbox("Wähle das Kapitel für die Simulation:", bekannte_themen)
         
-        # 1. Echte Daten für das ausgewählte Modul laden
+        # Echte Daten für das ausgewählte Modul laden
         p_data = progress_data.get(sim_thema, {"attempts": 0, "correct": 0, "avg_confidence": 1.0, "max_level": "Einsteiger"})
         
         current_attempts = p_data.get("attempts", 0)
@@ -361,7 +367,6 @@ if st.session_state.current_page == "dashboard":
         current_conf = p_data.get("avg_confidence", 1.0)
         current_max_level = p_data.get("max_level", "Einsteiger")
         
-        # Aktuellen Fortschritt berechnen
         level_weights = {"Einsteiger": 0.4, "Solide": 0.75, "Klausurniveau": 1.0, "Maximal": 1.0}
         curr_score = 0.0
         if current_attempts > 0:
@@ -370,7 +375,6 @@ if st.session_state.current_page == "dashboard":
         st.markdown(f"**Aktueller Stand ({sim_thema}):** {current_attempts} Versuche | {current_correct} Richtig | Cap: {current_max_level}")
         st.markdown("---")
         
-        # 2. Interaktive Eingaben
         sim_col1, sim_col2, sim_col3 = st.columns(3)
         with sim_col1:
             sim_correct = st.radio("Ergebnis der nächsten Antwort:", ["Richtig", "Falsch"])
@@ -379,38 +383,35 @@ if st.session_state.current_page == "dashboard":
         with sim_col3:
             sim_conf = st.selectbox("Eigene Sicherheit:", ["Sicher (1.0)", "Unsicher (0.75)", "Geraten (0.4)"])
             
-        # 3. Neues Szenario berechnen
         new_attempts = current_attempts + 1
         new_correct = current_correct + (1 if sim_correct == "Richtig" else 0)
         
-        # Neues Max-Level berechnen (Cap verschiebt sich nur bei "Richtig" nach oben)
         levels_list = ["Einsteiger", "Solide", "Klausurniveau", "Maximal"]
         curr_idx = levels_list.index(current_max_level) if current_max_level in levels_list else 0
         sim_idx = levels_list.index(sim_level)
         new_max_level = sim_level if (sim_correct == "Richtig" and sim_idx > curr_idx) else current_max_level
         
-        # Neue Confidence berechnen (neuer gleitender Durchschnitt)
         conf_val = {"Sicher (1.0)": 1.0, "Unsicher (0.75)": 0.75, "Geraten (0.4)": 0.4}[sim_conf]
         new_conf = ((current_conf * current_attempts) + conf_val) / new_attempts if new_attempts > 0 else conf_val
         
-        # Neuer Gesamtfortschritt
         new_score = (new_correct / new_attempts) * level_weights.get(new_max_level, 0.4) * new_conf
         
-        # 4. Visuelle Ausgabe mit Metrik-Delta
         st.markdown("#### Resultierender Gesamtfortschritt:")
         res_col1, res_col2 = st.columns([1, 3])
-        
         delta_val = (new_score - curr_score) * 100
         
         with res_col1:
-            st.metric(
-                label="Dein neuer Stand", 
-                value=f"{int(new_score * 100)} %", 
-                delta=f"{delta_val:+.1f} %"
-            )
+            st.metric(label="Dein neuer Stand", value=f"{int(new_score * 100)} %", delta=f"{delta_val:+.1f} %")
         with res_col2:
             st.progress(min(1.0, new_score))
-    # ---------------------------------------------------------
+            
+    st.write("") 
+
+    # 3. Der Action-Button (Clean, Fokussiert & Volle Breite am Seitenende)
+    if st.button("🚀 Lern-Sitzung starten", use_container_width=True, type="primary"):
+        st.session_state.current_page = "chat"
+        st.rerun()
+
     st.stop()  # Verhindert, dass der Chat-Teil auf dem Dashboard gerendert wird
 
 # --- 6. BACKEND WISSEN (Google & RAG für Groq) ---
