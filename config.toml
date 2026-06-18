@@ -1,0 +1,15 @@
+[theme]
+# Das satte RWTH-Blau macht alle primären Buttons (wie "Lern-Sitzung starten") blau statt rot
+primaryColor = "#00549F"
+
+# Ein sehr sanftes, augenschonendes Beige statt grellem Weiß für den Hauptbereich (Chat & Dashboard)
+backgroundColor = "#F9F8F6"
+
+# Ein minimal dunkleres Beige für die Seitenleiste, um sie sanft abzuheben
+secondaryBackgroundColor = "#F0EBE1"
+
+# Ein weiches, dunkles Grau-Blau für die Schrift (wirkt eleganter als hartes Schwarz)
+textColor = "#1E293B"
+
+# Die Schriftart auf einen modernen, sauberen System-Font zwingen
+font = "sans serif"
