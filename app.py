@@ -252,23 +252,28 @@ if st.session_state.current_page == "login":
 
 # --- 5. SEITENLEISTE ---
 with st.sidebar:
-    st.title("📚 Studienmaterial")
+    # 🚨 FIX: Permanenter Navigations-Button am Kopf der Sidebar (nur im Chat sichtbar)
+    if st.session_state.current_page == "chat":
+        if st.button("📊 Zurück zum Dashboard", use_container_width=True):
+            st.session_state.current_page = "dashboard"
+            st.rerun()
+        st.markdown("---")
+
+    # Cleanere Überschriften via Markdown statt st.title()
+    st.markdown("### 📋 Studienmaterial")
     if verfuegbare_pdfs:
-        # Wir behalten "Alle Foliensätze" als übergreifende Option an Position 0 im Menü bei
         pdf_auswahl = ["Alle Foliensätze"] + verfuegbare_pdfs
-        
-        # Durch index=1 zwingen wir das Dropdown, standardmäßig das erste aufsteigend
-        # sortierte PDF anzuzeigen, statt auf "Alle Foliensätze" (index=0) zu springen.
         gewaehlter_foliensatz = st.selectbox("Aktuelle Referenz:", pdf_auswahl, index=1)
     else:
         gewaehlter_foliensatz = "Kein Skript gefunden"
         st.warning("Bitte lade PDFs in 'studienmaterial' hoch.")
         
     st.markdown("---")
-    st.title("⚙️ System")
-    st.info(f"Angemeldet als: **{st.session_state.username}**")
+    st.markdown("### ⚙️ System")
     
-    # Neues Level-Dropdown für cleanere UI
+    # Cleanere Darstellung des Benutzers ohne klobige blaue Infobox
+    st.markdown(f"Nutzer: **{st.session_state.username}**")
+    
     neues_level = st.selectbox("Schwierigkeitsgrad:", ["Einsteiger", "Solide", "Klausurniveau", "Maximal"], index=["Einsteiger", "Solide", "Klausurniveau", "Maximal"].index(st.session_state.level))
     if neues_level != st.session_state.level:
         st.session_state.level = neues_level
@@ -279,11 +284,12 @@ with st.sidebar:
     st.markdown("---")
     col_btn1, col_btn2 = st.columns(2)
     with col_btn1:
-        if st.button("Abmelden", width="stretch"):
+        # FIX: use_container_width statt dem veralteten width="stretch"
+        if st.button("Abmelden", use_container_width=True):
             st.session_state.username = ""
             st.rerun()
     with col_btn2:
-        if st.button("Chat leeren", width="stretch"):
+        if st.button("Chat leeren", use_container_width=True):
             st.session_state.messages = [] 
             database[st.session_state.username]["history"] = [] 
             save_data(database)
@@ -501,40 +507,26 @@ LADE_ZITATE = [
 
 # --- 8. BENUTZEROBERFLÄCHE & CHAT LOGIK ---
 if st.session_state.current_page == "chat":
-    col_title, col_back = st.columns([4, 1])
-    with col_title:
-        st.title(f"Wolf of Wüllnerstraße | {st.session_state.username}")
-    with col_back:
-        st.write("") # Abstand
-        if st.button("🔙 Zum Dashboard"):
-            st.session_state.current_page = "dashboard"
-            st.rerun()
+    # Der Dashboard-Button hier oben fällt komplett weg, da er jetzt fest in der Sidebar verankert ist!
+    st.title(f"Wolf of Wüllnerstraße | {st.session_state.username}")
+    st.markdown("---")
 
     # 8.1 Chat-Verlauf rendern
     for i, message in enumerate(st.session_state.messages):
-        with st.chat_message(message["role"]): 
-            
+        # 🚨 FIX: Filigrane, minimalistische Avatare statt bunter Comic-Blöcke
+        avatar_icon = "👤" if message["role"] == "user" else "🎓"
+        
+        with st.chat_message(message["role"], avatar=avatar_icon): 
             if message.get("is_flashcard"):
-                # Prüfen, ob der Text Karteikarten-Schlüsselwörter enthält
                 cards_found = re.search(r'(?:Vorderseite|Frage).*?\:', message["content"], re.IGNORECASE)
-                
                 if cards_found:
-                    # Wir entfernen die unschönen Rohtext-Zeilen aus der Chat-Blase
                     clean_text = re.sub(r'(?i).*(?:Vorderseite|Frage|Rückseite|Antwort).*', '', message["content"])
-                    
-                    # 🚨 FIX: Verwaiste Markdown-Trennlinien (wie --- oder ***) entfernen
                     clean_text = re.sub(r'[-_*]{3,}', '', clean_text)
-                    
                     clean_text = re.sub(r'\n\s*\n', '\n\n', clean_text).strip()
-                    
-                    # Intro-Satz des Bots rendern, falls vorhanden
                     if clean_text:
                         st.markdown(clean_text)
-                    
-                    # HTML 3D-Karten direkt darunter rendern
                     display_html_flashcards(message["content"])
                 else:
-                    # Fallback, falls der Bot komplett vom Format abweicht
                     st.markdown(message["content"])
             else:
                 st.markdown(message["content"])
@@ -548,28 +540,26 @@ if st.session_state.current_page == "chat":
                     key=f"dl_btn_{i}"
                 )
 
-# 8.2 Das neue, cleane Aktions-Menü
-action = None
-uploaded_image = None # 🚨 NEU: Variable für das Bild initialisieren
+    # 8.2 Das bereinigte Aktions-Menü (Ohne Emoji-Salad in den Buttons)
+    action = None
+    uploaded_image = None 
 
-with st.popover("➕ Lern-Aktionen & Upload"):
-    st.markdown("**Wähle einen Modus:**")
-    if st.button("📝 Quiz starten", use_container_width=True): action = "/quiz"
-    
-    st.markdown("---")
-    karten_anzahl = st.slider("Anzahl Karteikarten:", min_value=2, max_value=8, value=3)
-    if st.button(f"🃏 {karten_anzahl} Karteikarten generieren", use_container_width=True): 
-        action = f"/karten {karten_anzahl}"
-    st.markdown("---")
-    
-    # 🚨 NEU: Der Datei-Uploader für Bilder (Kapitel 9)
-    # 🚨 NEU: Der Uploader nutzt jetzt den dynamischen Session-Key
-    uploaded_image = st.file_uploader("📸 Bild / Skizze hochladen:", type=["png", "jpg", "jpeg"], key=st.session_state.uploader_key)
-    
-    st.markdown("---")
-    if st.button("📄 Lernzettel erstellen", use_container_width=True): action = "/zettel"
-    if st.button("🎓 Klausur-Modus (Start/Auswerten)", use_container_width=True): action = "/klausur"
-    if st.button("🤔 Sokratischer Modus", use_container_width=True): action = "/sokratisch"
+    with st.popover("➕ Lern-Aktionen & Upload"):
+        st.markdown("**Wähle einen Modus:**")
+        if st.button("Quiz starten", use_container_width=True): action = "/quiz"
+        
+        st.markdown("---")
+        karten_anzahl = st.slider("Anzahl Karteikarten:", min_value=2, max_value=8, value=3)
+        if st.button(f"Karteikarten generieren ({karten_anzahl})", use_container_width=True): 
+            action = f"/karten {karten_anzahl}"
+        st.markdown("---")
+        
+        uploaded_image = st.file_uploader("Bild / Skizze hochladen:", type=["png", "jpg", "jpeg"], key=st.session_state.uploader_key)
+        
+        st.markdown("---")
+        if st.button("Lernzettel erstellen", use_container_width=True): action = "/zettel"
+        if st.button("Klausur-Modus (Start/Auswerten)", use_container_width=True): action = "/klausur"
+        if st.button("Sokratischer Modus", use_container_width=True): action = "/sokratisch"
 
 # 8.3 Eingabe verarbeiten (Textfeld ODER Button-Klick)
 prompt = st.chat_input("Frage zum Skript stellen...")
@@ -598,8 +588,12 @@ if user_input or uploaded_image:
     if uploaded_image:
         ui_message = f"📸 *[Bild angehängt]*\n\n" + ui_message
     
-    # Was der Nutzer im Chatverlauf sieht:
+   # Was der Nutzer im Chatverlauf sieht (Live-Injektion):
     st.session_state.messages.append({"role": "user", "content": ui_message})
+    
+    # 🚨 FIX: Auch hier den edlen Avatar übergeben
+    with st.chat_message("user", avatar="👤"): 
+        st.markdown(ui_message)
     
     with st.chat_message("user"): 
         st.markdown(ui_message)
@@ -653,7 +647,8 @@ if user_input or uploaded_image:
     # ==========================================
     # KI-AUFRUF
     # ==========================================
-    with st.chat_message("assistant"):
+   # 🚨 FIX: Auch hier den Coach-Avatar vergeben
+    with st.chat_message("assistant", avatar="🎓"):
         with st.spinner(random.choice(LADE_ZITATE)):
             try:
                 answer = ""
