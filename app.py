@@ -9,6 +9,7 @@ import random
 import re
 import time
 from fpdf import FPDF
+from PIL import Image
 
 # --- 1. SETUP & API-CLIENTS ---
 st.set_page_config(page_title="Wolf of Wüllnerstraße | RWTH Aachen", page_icon="🐺", layout="wide")
@@ -542,19 +543,24 @@ if st.session_state.current_page == "chat":
                     key=f"dl_btn_{i}"
                 )
 
-# 8.2 Das neue, cleane Aktions-Menü (ersetzt die rohen /befehle)
+# 8.2 Das neue, cleane Aktions-Menü
 action = None
-with st.popover("➕ Lern-Aktionen"):
+uploaded_image = None # 🚨 NEU: Variable für das Bild initialisieren
+
+with st.popover("➕ Lern-Aktionen & Upload"):
     st.markdown("**Wähle einen Modus:**")
     if st.button("📝 Quiz starten", use_container_width=True): action = "/quiz"
     
     st.markdown("---")
-    # 🚨 NEU: Interaktiver Schieberegler für die Karteikarten
     karten_anzahl = st.slider("Anzahl Karteikarten:", min_value=2, max_value=8, value=3)
     if st.button(f"🃏 {karten_anzahl} Karteikarten generieren", use_container_width=True): 
         action = f"/karten {karten_anzahl}"
     st.markdown("---")
     
+    # 🚨 NEU: Der Datei-Uploader für Bilder (Kapitel 9)
+    uploaded_image = st.file_uploader("📸 Bild / Skizze hochladen:", type=["png", "jpg", "jpeg"])
+    
+    st.markdown("---")
     if st.button("📄 Lernzettel erstellen", use_container_width=True): action = "/zettel"
     if st.button("🎓 Klausur-Modus (Start/Auswerten)", use_container_width=True): action = "/klausur"
     if st.button("🤔 Sokratischer Modus", use_container_width=True): action = "/sokratisch"
@@ -563,7 +569,11 @@ with st.popover("➕ Lern-Aktionen"):
 prompt = st.chat_input("Frage zum Skript stellen...")
 user_input = prompt or action
 
-if user_input:
+if user_input or uploaded_image:
+
+    # Fallback, falls nur ein Bild aber kein Text kommt
+    if uploaded_image and not user_input:
+        user_input = "Bitte analysiere meine hochgeladene Lösung/Skizze anhand der aktuellen Referenz."
     # 1. Übersetzung für das UI (Damit der User nicht "/quiz" als eigene Nachricht sieht)
     # 🚨 NEU: Dynamische Anzeige für den Chatverlauf
     if user_input.startswith("/karten"):
@@ -577,6 +587,10 @@ if user_input:
             "/sokratisch": "🤔 Aktiviere den sokratischen Modus für mich."
         }
         ui_message = display_texts.get(user_input, user_input)
+    
+    # Visueller Indikator für den User, dass ein Bild angehängt wurde
+    if uploaded_image:
+        ui_message = f"📸 *[Bild angehängt]*\n\n" + ui_message
     
     # Was der Nutzer im Chatverlauf sieht:
     st.session_state.messages.append({"role": "user", "content": ui_message})
@@ -637,8 +651,9 @@ if user_input:
         with st.spinner(random.choice(LADE_ZITATE)):
             try:
                 answer = ""
+                # 🚨 NEU: Wenn ein Bild hochgeladen wurde, zwingen wir das System auf Gemini (Vision)
+                if "Groq" in ki_modus and not uploaded_image:
                 # --- GROQ PFAD ---
-                if "Groq" in ki_modus:
                     if not groq_client: st.error("Groq API Key fehlt!")
                     else:
                         pages_dict = load_pdf_pages(gewaehlter_foliensatz)
@@ -661,6 +676,12 @@ if user_input:
                         
                         full_contents = []
                         if google_files: full_contents.extend(google_files)
+                        if uploaded_image:
+                            img = Image.open(uploaded_image)
+                            full_contents.append(img)
+                            # Instruktion aus Kapitel 9 anhängen
+                            FINAL_SYSTEM_PROMPT += "\n\nREGEL FÜR BILDER: Wenn das Bild unklar oder unleserlich ist, sag das offen und erfinde keine Inhalte."
+
                         full_contents.extend(history_for_api)
                         
                         response = google_client.models.generate_content(
