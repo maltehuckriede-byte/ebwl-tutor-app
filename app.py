@@ -49,62 +49,66 @@ def generate_pdf_bytes(thema, text):
     return pdf.output()
 
 # ==========================================
-# 🃏 HELPER FÜR INTERAKTIVE KARTEIKARTEN
+# 🃏 HELPER FÜR INTERAKTIVE KARTEIKARTEN (PREMIUM UI)
 # ==========================================
 def display_html_flashcards(ai_text):
-    # NEUER REGEX: Sehr robust, ignoriert Klammern wie "(Frage)" und liest sauber bis zum "|" oder Zeilenumbruch
+    # Regex bleibt identisch robust
     cards = re.findall(r'(?:Vorderseite|Frage).*?\:\s*([^|\n]+)(?:\s*\|\s*|\n+)(?:Rückseite|Antwort).*?\:\s*([^\n]+)', ai_text, re.IGNORECASE)
-    
     if not cards:
-        # Fallback-Regex
         cards = re.findall(r'\*\*(?:Vorderseite|Frage).*?\*\*\s*([^|\n]+)(?:\s*\|\s*|\n+)\*\*(?:Rückseite|Antwort).*?\*\*\s*([^\n]+)', ai_text, re.IGNORECASE)
 
     if cards:
-        # Wir blenden die Überschrift aus, da wir diese gleich im Chat-Verlauf dynamisch rendern
         cards_html = ""
-        
         for i, (front, back) in enumerate(cards):
-            # Eventuelle Markdown-Sterne vom Bot entfernen, damit sie nicht in der 3D Karte landen
             front_text = front.replace("**", "").strip()
             back_text = back.replace("**", "").strip()
             
+            # Premium HTML-Struktur mit Icons
             cards_html += f"""
             <div class="card-box">
                 <input type="checkbox" id="card-{i}" class="flip-checkbox" style="display:none;">
                 <label for="card-{i}" class="flip-card">
                     <div class="flip-card-inner">
                         <div class="flip-card-front">
-                            <div class="card-header" style="color: #00549F;">FRAGE</div>
+                            <div class="card-icon">❓</div>
+                            <div class="card-header">FRAGE</div>
                             <div class="card-content">{front_text}</div>
+                            <div class="card-hint">Klicken zum Drehen</div>
                         </div>
                         <div class="flip-card-inner-back">
+                            <div class="card-icon">💡</div>
                             <div class="card-header" style="color: #57AB27;">ANTWORT</div>
-                            <div class="card-content" style="font-weight: normal;">{back_text}</div>
+                            <div class="card-content">{back_text}</div>
                         </div>
                     </div>
                 </label>
             </div>
             """
             
+        # Premium CSS mit RWTH-Farben und flüssigen 3D-Schatten
         full_html = f"""
         <style>
-            .container {{ display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; font-family: 'Segoe UI', Arial, sans-serif; padding: 15px; }}
-            .card-box {{ display: inline-block; perspective: 1000px; }}
-            .flip-card {{ display: block; width: 280px; height: 180px; cursor: pointer; }}
-            .flip-card-inner {{ position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1); transform-style: preserve-3d; box-shadow: 0 6px 15px rgba(0,0,0,0.08); border-radius: 12px; }}
-            .flip-card:hover .flip-card-inner {{ box-shadow: 0 10px 20px rgba(0,84,159,0.15); }}
-            .flip-checkbox:checked + .flip-card .flip-card-inner {{ transform: rotateY(180deg); }}
-            .flip-card-front, .flip-card-inner-back {{ position: absolute; width: 100%; height: 100%; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 12px; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: center; }}
-            .flip-card-front {{ background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); color: #0f172a; border: 1px solid #cbd5e1; }}
-            .flip-card-inner-back {{ background: #ffffff; color: #1e293b; transform: rotateY(180deg); border: 2px solid #57AB27; }}
-            .card-header {{ font-size: 11px; font-weight: 800; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 1px; }}
-            .card-content {{ font-size: 14px; font-weight: 600; line-height: 1.5; overflow-y: auto; max-height: 120px; }}
+            .container {{ display: flex; flex-wrap: wrap; gap: 25px; justify-content: center; font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; }}
+            .card-box {{ display: inline-block; perspective: 1200px; }}
+            .flip-card {{ display: block; width: 300px; height: 210px; cursor: pointer; }}
+            .flip-card-inner {{ position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1); transform-style: preserve-3d; }}
+            .flip-card-front, .flip-card-inner-back {{ position: absolute; width: 100%; height: 100%; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 16px; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: center; box-shadow: 0 8px 25px rgba(0,0,0,0.08); }}
+            .flip-card-front {{ background: linear-gradient(135deg, #00549F 0%, #003a6d 100%); color: #ffffff; border: none; }}
+            .flip-card-inner-back {{ background: #ffffff; color: #1e293b; transform: rotateY(180deg); border: 3px solid #57AB27; }}
+            .card-header {{ font-size: 12px; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1.5px; opacity: 0.9; }}
+            .flip-card-front .card-header {{ color: #e2e8f0; }}
+            .card-content {{ font-size: 15px; font-weight: 600; line-height: 1.4; overflow-y: auto; flex-grow: 1; display: flex; align-items: center; justify-content: center; }}
+            .card-icon {{ font-size: 26px; margin-bottom: 5px; }}
+            .card-hint {{ font-size: 11px; font-weight: 500; opacity: 0.6; margin-top: auto; text-transform: uppercase; letter-spacing: 1px; }}
             .card-content::-webkit-scrollbar {{ display: none; }}
+            .flip-checkbox:checked + .flip-card .flip-card-inner {{ transform: rotateY(180deg); }}
+            /* Der neue Hover-Effekt (Karte hebt sich an) */
+            .flip-card:hover .flip-card-inner {{ box-shadow: 0 15px 35px rgba(0,84,159,0.25); transform: translateY(-5px); transition: all 0.3s ease; }}
+            .flip-checkbox:checked + .flip-card:hover .flip-card-inner {{ transform: rotateY(180deg) translateY(-5px); }}
         </style>
         <div class="container">{cards_html}</div>
         """
-        # 🚨 FIX: Native HTML-Render-Methode, die nicht vom Markdown-Parser zerstört wird
-        st.html(f'<div style="height: {230 if len(cards) <= 3 else 460}px; overflow-y: auto;">{full_html}</div>')
+        st.html(f'<div style="min-height: 250px;">{full_html}</div>')
 
 # --- 2. DATENBANK-SYSTEM & LERNFORTSCHRITT ---
 DATA_FILE = "savegames.json"
@@ -278,33 +282,68 @@ if st.session_state.current_page == "dashboard":
             st.rerun()
 
     # ---------------------------------------------------------
-    # 🔍 NEU: DETAILLIERTE FORMEL-ANALYSE & SIMULATION
+    # 🔍 NEU: DETAILLIERTE FORMEL-ANALYSE & ECHTER SIMULATOR
     # ---------------------------------------------------------
-    with st.expander("🔍 Detaillierte Formel-Analyse & Simulation"):
-        st.markdown("### Wie berechnet der Bot deinen Fortschritt?")
-        st.latex(r"\text{Fortschritt} = \text{Trefferquote} \times \text{Level-Cap} \times \text{Sicherheit} \times \text{Aktualität}")
+    with st.expander("🔍 Simulator: Wie wirkt sich deine nächste Antwort aus?"):
+        st.info("Dieser Simulator lädt deinen **echten, aktuellen Lernstand** für das in der Seitenleiste ausgewählte Kapitel. Er zeigt dir exakt, wie sich dein Gesamtfortschritt verändert, wenn du jetzt eine weitere Frage beantwortest.")
         
-        st.info("Dein Balken füllt sich nicht einfach durch reines Klicken. Wahres Verständnis (Klausurniveau + absolute Sicherheit) wird am stärksten belohnt. Geratenes Wissen wird abgewertet.")
+        # 1. Echte Daten für das aktuell in der Seitenleiste ausgewählte Modul laden
+        p_data = progress_data.get(gewaehlter_foliensatz, {"attempts": 0, "correct": 0, "avg_confidence": 1.0, "max_level": "Einsteiger"})
         
+        current_attempts = p_data.get("attempts", 0)
+        current_correct = p_data.get("correct", 0)
+        current_conf = p_data.get("avg_confidence", 1.0)
+        current_max_level = p_data.get("max_level", "Einsteiger")
+        
+        # Aktuellen Fortschritt berechnen
+        level_weights = {"Einsteiger": 0.4, "Solide": 0.75, "Klausurniveau": 1.0, "Maximal": 1.0}
+        curr_score = 0.0
+        if current_attempts > 0:
+            curr_score = (current_correct / current_attempts) * level_weights.get(current_max_level, 0.4) * current_conf
+
+        st.markdown(f"**Aktueller Stand ({gewaehlter_foliensatz}):** {current_attempts} Versuche | {current_correct} Richtig | Cap: {current_max_level}")
         st.markdown("---")
-        st.markdown("**🎮 Simuliere deine nächste Frage:**")
         
+        # 2. Interaktive Eingaben
         sim_col1, sim_col2, sim_col3 = st.columns(3)
         with sim_col1:
-            sim_correct = st.radio("Ergebnis der Antwort:", ["Richtig", "Falsch"])
+            sim_correct = st.radio("Ergebnis der nächsten Antwort:", ["Richtig", "Falsch"])
         with sim_col2:
-            sim_level = st.selectbox("Gespieltes Level:", ["Einsteiger (0.4)", "Solide (0.75)", "Klausurniveau (1.0)"])
+            sim_level = st.selectbox("Gespieltes Level:", ["Einsteiger", "Solide", "Klausurniveau", "Maximal"], index=["Einsteiger", "Solide", "Klausurniveau", "Maximal"].index(current_max_level) if current_max_level in ["Einsteiger", "Solide", "Klausurniveau", "Maximal"] else 0)
         with sim_col3:
             sim_conf = st.selectbox("Eigene Sicherheit:", ["Sicher (1.0)", "Unsicher (0.75)", "Geraten (0.4)"])
             
-        # Simpler Preview-Rechenweg für den User
-        sim_treffer = 1.0 if sim_correct == "Richtig" else 0.0
-        sim_lvl_val = {"Einsteiger (0.4)": 0.4, "Solide (0.75)": 0.75, "Klausurniveau (1.0)": 1.0}[sim_level]
-        sim_conf_val = {"Sicher (1.0)": 1.0, "Unsicher (0.75)": 0.75, "Geraten (0.4)": 0.4}[sim_conf]
+        # 3. Neues Szenario berechnen
+        new_attempts = current_attempts + 1
+        new_correct = current_correct + (1 if sim_correct == "Richtig" else 0)
         
-        sim_result = sim_treffer * sim_lvl_val * sim_conf_val * 1.0
+        # Neues Max-Level berechnen (Cap verschiebt sich nur bei "Richtig" nach oben)
+        levels_list = ["Einsteiger", "Solide", "Klausurniveau", "Maximal"]
+        curr_idx = levels_list.index(current_max_level) if current_max_level in levels_list else 0
+        sim_idx = levels_list.index(sim_level)
+        new_max_level = sim_level if (sim_correct == "Richtig" and sim_idx > curr_idx) else current_max_level
         
-        st.markdown(f"*(Dies ist eine isolierte Vorschau. Ein einzelner Versuch unter diesen Bedingungen ergibt einen Netto-Fortschrittswert von **{int(sim_result * 100)} %**)*")
+        # Neue Confidence berechnen (neuer gleitender Durchschnitt)
+        conf_val = {"Sicher (1.0)": 1.0, "Unsicher (0.75)": 0.75, "Geraten (0.4)": 0.4}[sim_conf]
+        new_conf = ((current_conf * current_attempts) + conf_val) / new_attempts if new_attempts > 0 else conf_val
+        
+        # Neuer Gesamtfortschritt
+        new_score = (new_correct / new_attempts) * level_weights.get(new_max_level, 0.4) * new_conf
+        
+        # 4. Visuelle Ausgabe mit Metrik-Delta
+        st.markdown("#### Resultierender Gesamtfortschritt:")
+        res_col1, res_col2 = st.columns([1, 3])
+        
+        delta_val = (new_score - curr_score) * 100
+        
+        with res_col1:
+            st.metric(
+                label="Dein neuer Stand", 
+                value=f"{int(new_score * 100)} %", 
+                delta=f"{delta_val:+.1f} %"
+            )
+        with res_col2:
+            st.progress(min(1.0, new_score))
     # ---------------------------------------------------------
             
     st.stop() # Stoppt hier, damit der Chat nicht drunter gerendert wird
