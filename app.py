@@ -285,10 +285,15 @@ if st.session_state.current_page == "dashboard":
     # 🔍 NEU: DETAILLIERTE FORMEL-ANALYSE & ECHTER SIMULATOR
     # ---------------------------------------------------------
     with st.expander("🔍 Simulator: Wie wirkt sich deine nächste Antwort aus?"):
-        st.info("Dieser Simulator lädt deinen **echten, aktuellen Lernstand** für das in der Seitenleiste ausgewählte Kapitel. Er zeigt dir exakt, wie sich dein Gesamtfortschritt verändert, wenn du jetzt eine weitere Frage beantwortest.")
+        st.info("Dieser Simulator lädt deinen **echten, aktuellen Lernstand** für das ausgewählte Kapitel. Er zeigt dir exakt, wie sich dein Gesamtfortschritt verändert, wenn du jetzt eine weitere Frage beantwortest.")
         
-        # 1. Echte Daten für das aktuell in der Seitenleiste ausgewählte Modul laden
-        p_data = progress_data.get(gewaehlter_foliensatz, {"attempts": 0, "correct": 0, "avg_confidence": 1.0, "max_level": "Einsteiger"})
+        # 🚨 FIX: Da die Seitenleiste auf dem Dashboard nicht existiert,
+        # wählen wir das Thema für die Simulation direkt hier aus!
+        bekannte_themen = list(progress_data.keys()) if progress_data else ["Bisher keine Daten"]
+        sim_thema = st.selectbox("Wähle das Kapitel für die Simulation:", bekannte_themen)
+        
+        # 1. Echte Daten für das ausgewählte Modul laden
+        p_data = progress_data.get(sim_thema, {"attempts": 0, "correct": 0, "avg_confidence": 1.0, "max_level": "Einsteiger"})
         
         current_attempts = p_data.get("attempts", 0)
         current_correct = p_data.get("correct", 0)
@@ -301,7 +306,7 @@ if st.session_state.current_page == "dashboard":
         if current_attempts > 0:
             curr_score = (current_correct / current_attempts) * level_weights.get(current_max_level, 0.4) * current_conf
 
-        st.markdown(f"**Aktueller Stand ({gewaehlter_foliensatz}):** {current_attempts} Versuche | {current_correct} Richtig | Cap: {current_max_level}")
+        st.markdown(f"**Aktueller Stand ({sim_thema}):** {current_attempts} Versuche | {current_correct} Richtig | Cap: {current_max_level}")
         st.markdown("---")
         
         # 2. Interaktive Eingaben
@@ -345,8 +350,6 @@ if st.session_state.current_page == "dashboard":
         with res_col2:
             st.progress(min(1.0, new_score))
     # ---------------------------------------------------------
-            
-    st.stop() # Stoppt hier, damit der Chat nicht drunter gerendert wird
 
 # --- 4. DYNAMISCHES SKRIPT VERZEICHNIS ---
 verfuegbare_pdfs = []
