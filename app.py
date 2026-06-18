@@ -119,7 +119,6 @@ def display_html_flashcards(ai_text):
 # ==========================================
 def render_premium_dashboard(username, total_q, accuracy, level, progress_data):
     
-    # 🌟 NEU: Wir injizieren echtes CSS für Hover-Effekte und knackige Ränder!
     css = """
     <style>
         .kpi-card {
@@ -139,7 +138,6 @@ def render_premium_dashboard(username, total_q, accuracy, level, progress_data):
             border: 1px solid rgba(255, 255, 255, 0.07);
             transition: all 0.3s ease;
         }
-        /* Der Magische Hover-Effekt: Kachel hebt sich und Rand leuchtet blau */
         .dash-card:hover {
             transform: translateY(-4px); 
             box-shadow: 0 15px 30px rgba(0,0,0,0.5);
@@ -183,12 +181,13 @@ def render_premium_dashboard(username, total_q, accuracy, level, progress_data):
         </div>"""
     else:
         for pdf_name, stats in progress_data.items():
+            
+            # 🚨 HIER LAG DER FEHLER: Diese Zeilen fehlten vermutlich bei dir!
             score = calculate_progress(stats)
             score_percent = int(score * 100)
             clean_name = pdf_name.replace(".pdf", "").replace("_", " ")
             
-            # Frische, leuchtende Farben für euer Ampelsystem 
-            bar_color = "#10B981" if score_percent >= 80 else ("#F59E0B" if score_percent >= 50 else "#EF4444") [cite: 877]
+            bar_color = "#10B981" if score_percent >= 80 else ("#F59E0B" if score_percent >= 50 else "#EF4444")
             
             cards_html += f"""
             <div class="dash-card">
