@@ -2,4 +2,5 @@ streamlit
 groq
 google-genai
 pypdf
-fpdf2
+fpdf
+Pillow
