@@ -114,6 +114,69 @@ def display_html_flashcards(ai_text):
         """
         st.html(f'<div style="min-height: 250px;">{full_html}</div>')
 
+# ==========================================
+# 🎨 PREMIUM HTML/CSS DASHBOARD GENERATOR
+# ==========================================
+def render_premium_dashboard(username, total_q, accuracy, level, progress_data):
+    
+    # 1. Die Bento-Box KPIs
+    kpi_html = f"""
+    <div style="display: flex; gap: 20px; margin-bottom: 30px; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 200px; background: linear-gradient(145deg, #1e293b, #0f172a); border-radius: 16px; padding: 24px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3); border-top: 4px solid #00549F;">
+            <div style="color: #94A3B8; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Beantwortete Fragen</div>
+            <div style="color: #F8FAFC; font-size: 36px; font-weight: 800; margin-top: 8px;">{total_q}</div>
+        </div>
+        <div style="flex: 1; min-width: 200px; background: linear-gradient(145deg, #1e293b, #0f172a); border-radius: 16px; padding: 24px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3); border-top: 4px solid #57AB27;">
+            <div style="color: #94A3B8; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Trefferquote</div>
+            <div style="color: #F8FAFC; font-size: 36px; font-weight: 800; margin-top: 8px;">{accuracy}<span style="font-size: 20px; color: #64748B;"> %</span></div>
+        </div>
+        <div style="flex: 1; min-width: 200px; background: linear-gradient(145deg, #1e293b, #0f172a); border-radius: 16px; padding: 24px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3); border-top: 4px solid #8B5CF6;">
+            <div style="color: #94A3B8; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Aktuelles Cap</div>
+            <div style="color: #F8FAFC; font-size: 36px; font-weight: 800; margin-top: 8px;">{level}</div>
+        </div>
+    </div>
+    """
+
+    # 2. Die interaktiven Kapitel-Kacheln (Grid)
+    cards_html = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; margin-bottom: 40px;">'
+    
+    if not progress_data:
+        cards_html += """
+        <div style="grid-column: 1 / -1; background: #1e293b; border-radius: 16px; padding: 40px; text-align: center; border: 1px dashed #475569;">
+            <h3 style="color: #94A3B8; margin: 0;">Noch keine Daten vorhanden</h3>
+            <p style="color: #64748b; font-size: 14px;">Starte deine erste Sitzung, um deinen Fortschritt hier zu sehen.</p>
+        </div>"""
+    else:
+        for pdf_name, stats in progress_data.items():
+            score = calculate_progress(stats)
+            score_percent = int(score * 100)
+            clean_name = pdf_name.replace(".pdf", "").replace("_", " ")
+            
+            # Farb-Logik für den Fortschrittsbalken
+            bar_color = "#57AB27" if score_percent >= 80 else ("#F59E0B" if score_percent >= 50 else "#EF4444")
+            
+            cards_html += f"""
+            <div style="background: #1e293b; border-radius: 16px; padding: 20px; transition: transform 0.2s, box-shadow 0.2s; cursor: default; border: 1px solid #334155;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                    <div style="font-weight: 600; color: #F8FAFC; font-size: 16px; line-height: 1.3;">{clean_name}</div>
+                    <div style="background: #0f172a; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; color: {bar_color};">{score_percent}%</div>
+                </div>
+                
+                <div style="width: 100%; background-color: #0f172a; border-radius: 8px; height: 8px; margin-bottom: 15px; overflow: hidden;">
+                    <div style="width: {score_percent}%; background-color: {bar_color}; height: 100%; border-radius: 8px; transition: width 1s ease-in-out;"></div>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; color: #64748B; font-size: 12px;">
+                    <span>Versuche: {stats.get('attempts', 0)}</span>
+                    <span>Level: <b style="color: #94A3B8;">{stats.get('max_level', 'Einsteiger')}</b></span>
+                </div>
+            </div>
+            """
+    cards_html += '</div>'
+
+    # Alles zusammenfügen und rendern
+    st.html(kpi_html + cards_html)
+
 # --- 2. DATENBANK-SYSTEM & LERNFORTSCHRITT ---
 DATA_FILE = "savegames.json"
 
@@ -301,60 +364,23 @@ if st.session_state.current_page == "dashboard":
     st.markdown(f"Willkommen zurück, **{st.session_state.username}**. Hier ist dein aktueller Wissensstand basierend auf deinen Antworten und deiner Selbsteinschätzung.")
     st.write("")
     
-    # Echte Nutzerdaten aus deiner Savegame-Datenbank abrufen
+   # Echte Nutzerdaten abrufen
     user_data = database.get(st.session_state.username, {})
     progress_data = user_data.get("progress", {})
     
-    # Globale KPIs dynamisch berechnen
+    # KPIs berechnen
     total_questions = sum(p.get("attempts", 0) for p in progress_data.values())
     total_correct = sum(p.get("correct", 0) for p in progress_data.values())
     global_accuracy = int((total_correct / total_questions * 100)) if total_questions > 0 else 0
     
-    # 1. KPI-Reihe in sauberen Kacheln (Kompakt & Professionell via Container-Borders)
-    kpi1, kpi2, kpi3 = st.columns(3)
-    with kpi1:
-        with st.container(border=True):
-            st.metric(label="Beantwortete Fragen", value=total_questions)
-    with kpi2:
-        with st.container(border=True):
-            st.metric(label="Trefferquote (Global)", value=f"{global_accuracy} %")
-    with kpi3:
-        with st.container(border=True):
-            st.metric(label="Aktuelles Level", value=st.session_state.level)
-    
-    st.write("") # Luft zum Atmen statt harter Trennlinie
-    st.subheader("📚 Fortschritt pro Kapitel")
-    
-    if not progress_data:
-        st.info("Du hast noch keine Fragen beantwortet. Starte eine Sitzung, um deinen Fortschritt zu füllen!")
-    else:
-        # Dynamische Schleife durch deine echten Kapiteldaten
-        for pdf_name, stats in progress_data.items():
-            score = calculate_progress(stats)
-            score_percent = int(score * 100)
-            
-            # Ampelfarben nach deinem EBWL-Konzept
-            if score_percent >= 80: color = "🟢"
-            elif score_percent >= 50: color = "🟡"
-            else: color = "🔴"
-            
-            # 2. Kapitel-Layout linearisieren (Modernes Zeilen-Grid)
-            with st.container(border=True):
-                cap_col1, cap_col2, cap_col3 = st.columns([3, 5, 2])
-                
-                with cap_col1:
-                    clean_name = pdf_name.replace(".pdf", "").replace("_", " ")
-                    st.markdown(f"**{color} {clean_name}**")
-                    
-                with cap_col2:
-                    # Der Fortschrittsbalken sitzt perfekt zentriert in der Mitte
-                    st.progress(score)
-                    
-                with cap_col3:
-                    # Metadaten sauber rechtsbündig formatiert
-                    st.markdown(f"<div style='text-align: right; color: gray; font-size: 0.85rem;'>Level: <b>{stats.get('max_level', 'Einsteiger')}</b><br>Versuche: {stats.get('attempts', 0)}</div>", unsafe_allow_html=True)
-                
-    st.write("") 
+    # 🎨 HIER KOMMT DIE MAGIE: Unser Premium-Dashboard rendern
+    render_premium_dashboard(
+        st.session_state.username, 
+        total_questions, 
+        global_accuracy, 
+        st.session_state.level, 
+        progress_data
+    )
 
     # ---------------------------------------------------------
     # 🔍 DETAILLIERTE FORMEL-ANALYSE & ECHTER SIMULATOR (Unverändert, aber optisch eingebettet)
