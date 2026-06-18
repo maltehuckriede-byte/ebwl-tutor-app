@@ -523,7 +523,7 @@ if user_input:
 
     # 🚨 NEU: Das heimliche Tracking-System für Nutzer-Antworten!
     if not user_input_lower.startswith("/") and st.session_state.active_mode in ["quiz", "klausur"]:
-        system_override += "\n\nWICHTIG FÜR DAS TRACKING: Der Nutzer hat gerade eine inhaltliche Frage beantwortet. Bewerte diese Antwort! Hänge ganz am Ende deiner Ausgabe ZWINGEND folgenden unsichtbaren HTML-Tag an: (Wähle zutreffend 'richtig' oder 'falsch' und schätze die Metakognition/Sicherheit des Nutzers anhand seiner Formulierung auf 'sicher', 'unsicher' oder 'geraten'). Beispiel: "
+        system_override += "\n\nWICHTIG FÜR DAS TRACKING: Der Nutzer hat gerade eine inhaltliche Frage beantwortet. Bewerte diese Antwort! Hänge ganz am Ende deiner Ausgabe ZWINGEND folgenden unsichtbaren HTML-Tag an: <eval ERGEBNIS SICHERHEIT>. (Wähle zutreffend 'richtig' oder 'falsch' und schätze die Metakognition/Sicherheit des Nutzers anhand seiner Formulierung auf 'sicher', 'unsicher' oder 'geraten'). Beispiel: <eval richtig sicher>"
 
     FINAL_SYSTEM_PROMPT = SYSTEM_PROMPT + f"\nAktuelles Schwierigkeitsniveau: {st.session_state.level}"
 
@@ -574,7 +574,7 @@ if user_input:
                 if answer:
                     
                     # 🚨 NEU: EVAL-Tag auslesen und Lernfortschritt in Datenbank speichern
-                    eval_match = re.search(r'', answer, re.IGNORECASE)
+                    eval_match = re.search(r'<eval\s+(richtig|falsch)\s+(sicher|unsicher|geraten)>', answer, re.IGNORECASE)
                     if eval_match:
                         is_correct = eval_match.group(1).lower() == "richtig"
                         confidence = eval_match.group(2).lower()
@@ -583,7 +583,7 @@ if user_input:
                         record_learning_event(st.session_state.username, gewaehlter_foliensatz, is_correct, st.session_state.level, confidence)
                         
                         # Den unsichtbaren Tag aus der Nachricht löschen, damit der User ihn nicht sieht
-                        answer = re.sub(r'', '', answer).strip()
+                        answer = re.sub(r'<eval[^>]*>', '', answer, flags=re.IGNORECASE).strip()
 
                     # -- Ab hier bleibt dein Code gleich --
                     pdf_bytes = None
