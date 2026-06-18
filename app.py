@@ -63,11 +63,14 @@ def display_html_flashcards(ai_text):
             front_text = front.replace("**", "").strip()
             back_text = back.replace("**", "").strip()
             
-            # Premium HTML-Struktur mit Icons
+            # 🚨 FIX: Eine garantiert einmalige ID für jede Karte generieren
+            unique_id = f"card-{random.randint(1000000, 9999999)}-{i}"
+            
+            # Premium HTML-Struktur mit Icons und einzigartiger ID
             cards_html += f"""
             <div class="card-box">
-                <input type="checkbox" id="card-{i}" class="flip-checkbox" style="display:none;">
-                <label for="card-{i}" class="flip-card">
+                <input type="checkbox" id="{unique_id}" class="flip-checkbox" style="display:none;">
+                <label for="{unique_id}" class="flip-card">
                     <div class="flip-card-inner">
                         <div class="flip-card-front">
                             <div class="card-icon">❓</div>
@@ -228,6 +231,45 @@ if st.session_state.current_page == "login":
                 st.rerun()
     st.stop()
 
+# --- 5. SEITENLEISTE ---
+with st.sidebar:
+    st.title("📚 Studienmaterial")
+    if verfuegbare_pdfs:
+        # Wir behalten "Alle Foliensätze" als übergreifende Option an Position 0 im Menü bei
+        pdf_auswahl = ["Alle Foliensätze"] + verfuegbare_pdfs
+        
+        # Durch index=1 zwingen wir das Dropdown, standardmäßig das erste aufsteigend
+        # sortierte PDF anzuzeigen, statt auf "Alle Foliensätze" (index=0) zu springen.
+        gewaehlter_foliensatz = st.selectbox("Aktuelle Referenz:", pdf_auswahl, index=1)
+    else:
+        gewaehlter_foliensatz = "Kein Skript gefunden"
+        st.warning("Bitte lade PDFs in 'studienmaterial' hoch.")
+        
+    st.markdown("---")
+    st.title("⚙️ System")
+    st.info(f"Angemeldet als: **{st.session_state.username}**")
+    
+    # Neues Level-Dropdown für cleanere UI
+    neues_level = st.selectbox("Schwierigkeitsgrad:", ["Einsteiger", "Solide", "Klausurniveau", "Maximal"], index=["Einsteiger", "Solide", "Klausurniveau", "Maximal"].index(st.session_state.level))
+    if neues_level != st.session_state.level:
+        st.session_state.level = neues_level
+        st.rerun()
+        
+    ki_modus = st.radio("Sprachmodell:", ["Google (Gemini Base)", "Groq (RAG Highspeed)"])
+    
+    st.markdown("---")
+    col_btn1, col_btn2 = st.columns(2)
+    with col_btn1:
+        if st.button("Abmelden", width="stretch"):
+            st.session_state.username = ""
+            st.rerun()
+    with col_btn2:
+        if st.button("Chat leeren", width="stretch"):
+            st.session_state.messages = [] 
+            database[st.session_state.username]["history"] = [] 
+            save_data(database)
+            st.rerun()
+
 # --- 3.5 LERN-DASHBOARD ---
 if st.session_state.current_page == "dashboard":
     st.title("📊 Dein Lern-Dashboard")
@@ -350,6 +392,7 @@ if st.session_state.current_page == "dashboard":
         with res_col2:
             st.progress(min(1.0, new_score))
     # ---------------------------------------------------------
+    st.stop()  # Verhindert, dass der Chat-Teil auf dem Dashboard gerendert wird
 
 # --- 4. DYNAMISCHES SKRIPT VERZEICHNIS ---
 verfuegbare_pdfs = []
@@ -364,45 +407,6 @@ if os.path.exists("studienmaterial"):
     
     # Hier wenden wir unseren neuen Sortier-Schlüssel an
     verfuegbare_pdfs = sorted(roh_pdfs, key=natural_sort_key)
-
-# --- 5. SEITENLEISTE ---
-with st.sidebar:
-    st.title("📚 Studienmaterial")
-    if verfuegbare_pdfs:
-        # Wir behalten "Alle Foliensätze" als übergreifende Option an Position 0 im Menü bei
-        pdf_auswahl = ["Alle Foliensätze"] + verfuegbare_pdfs
-        
-        # Durch index=1 zwingen wir das Dropdown, standardmäßig das erste aufsteigend
-        # sortierte PDF anzuzeigen, statt auf "Alle Foliensätze" (index=0) zu springen.
-        gewaehlter_foliensatz = st.selectbox("Aktuelle Referenz:", pdf_auswahl, index=1)
-    else:
-        gewaehlter_foliensatz = "Kein Skript gefunden"
-        st.warning("Bitte lade PDFs in 'studienmaterial' hoch.")
-        
-    st.markdown("---")
-    st.title("⚙️ System")
-    st.info(f"Angemeldet als: **{st.session_state.username}**")
-    
-    # Neues Level-Dropdown für cleanere UI
-    neues_level = st.selectbox("Schwierigkeitsgrad:", ["Einsteiger", "Solide", "Klausurniveau", "Maximal"], index=["Einsteiger", "Solide", "Klausurniveau", "Maximal"].index(st.session_state.level))
-    if neues_level != st.session_state.level:
-        st.session_state.level = neues_level
-        st.rerun()
-        
-    ki_modus = st.radio("Sprachmodell:", ["Google (Gemini Base)", "Groq (RAG Highspeed)"])
-    
-    st.markdown("---")
-    col_btn1, col_btn2 = st.columns(2)
-    with col_btn1:
-        if st.button("Abmelden", width="stretch"):
-            st.session_state.username = ""
-            st.rerun()
-    with col_btn2:
-        if st.button("Chat leeren", width="stretch"):
-            st.session_state.messages = [] 
-            database[st.session_state.username]["history"] = [] 
-            save_data(database)
-            st.rerun()
 
 # --- 6. BACKEND WISSEN (Google & RAG für Groq) ---
 @st.cache_resource
@@ -543,7 +547,14 @@ action = None
 with st.popover("➕ Lern-Aktionen"):
     st.markdown("**Wähle einen Modus:**")
     if st.button("📝 Quiz starten", use_container_width=True): action = "/quiz"
-    if st.button("🃏 Karteikarten generieren", use_container_width=True): action = "/karten"
+    
+    st.markdown("---")
+    # 🚨 NEU: Interaktiver Schieberegler für die Karteikarten
+    karten_anzahl = st.slider("Anzahl Karteikarten:", min_value=2, max_value=8, value=3)
+    if st.button(f"🃏 {karten_anzahl} Karteikarten generieren", use_container_width=True): 
+        action = f"/karten {karten_anzahl}"
+    st.markdown("---")
+    
     if st.button("📄 Lernzettel erstellen", use_container_width=True): action = "/zettel"
     if st.button("🎓 Klausur-Modus (Start/Auswerten)", use_container_width=True): action = "/klausur"
     if st.button("🤔 Sokratischer Modus", use_container_width=True): action = "/sokratisch"
@@ -554,16 +565,20 @@ user_input = prompt or action
 
 if user_input:
     # 1. Übersetzung für das UI (Damit der User nicht "/quiz" als eigene Nachricht sieht)
-    display_texts = {
-        "/quiz": "📝 Ich möchte ein kurzes Quiz starten.",
-        "/karten": "🃏 Erstelle mir bitte Karteikarten zum aktuellen Thema.",
-        "/zettel": "📄 Fasse das aktuelle Thema als kompakten Lernzettel zusammen.",
-        "/klausur": "🎓 Lass uns den Klausur-Modus starten (bzw. auswerten, falls wir mittendrin sind).",
-        "/sokratisch": "🤔 Aktiviere den sokratischen Modus für mich."
-    }
+    # 🚨 NEU: Dynamische Anzeige für den Chatverlauf
+    if user_input.startswith("/karten"):
+        anzahl = user_input.split()[1] if len(user_input.split()) > 1 else "3"
+        ui_message = f"🃏 Erstelle mir bitte {anzahl} Karteikarten zum aktuellen Thema."
+    else:
+        display_texts = {
+            "/quiz": "📝 Ich möchte ein kurzes Quiz starten.",
+            "/zettel": "📄 Fasse das aktuelle Thema als kompakten Lernzettel zusammen.",
+            "/klausur": "🎓 Lass uns den Klausur-Modus starten (bzw. auswerten, falls wir mittendrin sind).",
+            "/sokratisch": "🤔 Aktiviere den sokratischen Modus für mich."
+        }
+        ui_message = display_texts.get(user_input, user_input)
     
     # Was der Nutzer im Chatverlauf sieht:
-    ui_message = display_texts.get(user_input, user_input)
     st.session_state.messages.append({"role": "user", "content": ui_message})
     
     with st.chat_message("user"): 
@@ -594,7 +609,9 @@ if user_input:
 
     elif user_input_lower.startswith("/karten"):
         st.session_state.active_mode = None
-        system_override = "Erstelle 3 kompakte Karteikarten zum Thema. Format: **Vorderseite (Frage):** ... | **Rückseite (Antwort):** ..."
+        # Anzahl auslesen (Standard: 3)
+        anzahl = user_input_lower.split()[1] if len(user_input_lower.split()) > 1 else "3"
+        system_override = f"Erstelle exakt {anzahl} kompakte Karteikarten zum Thema. Format: **Vorderseite (Frage):** ... | **Rückseite (Antwort):** ..."
 
     elif user_input_lower.startswith("/sokratisch"):
         st.session_state.active_mode = None
