@@ -201,6 +201,20 @@ if "level" not in st.session_state: st.session_state.level = "Solide"
 if "klausur_modus" not in st.session_state: st.session_state.klausur_modus = False
 if "active_mode" not in st.session_state: st.session_state.active_mode = None
 
+# --- 4. DYNAMISCHES SKRIPT VERZEICHNIS ---
+verfuegbare_pdfs = []
+if os.path.exists("studienmaterial"):
+    
+    # Hilfsfunktion, die Zahlen im Dateinamen als echte Zahlen erkennt
+    def natural_sort_key(s):
+        # Zerlegt den String in Text- und Zahlenblöcke und wandelt Zahlen in Integer um
+        return [int(text) if text.isdigit() else text.lower() for text in re.split(r'(\d+)', s)]
+        
+    roh_pdfs = [f for f in os.listdir("studienmaterial") if f.endswith(".pdf")]
+    
+    # Hier wenden wir unseren neuen Sortier-Schlüssel an
+    verfuegbare_pdfs = sorted(roh_pdfs, key=natural_sort_key)
+
 # --- 3. STARTBILDSCHIRM & LOGIN ---
 if st.session_state.current_page == "login":
     col1, col2, col3 = st.columns([1, 1.5, 1])
@@ -393,20 +407,6 @@ if st.session_state.current_page == "dashboard":
             st.progress(min(1.0, new_score))
     # ---------------------------------------------------------
     st.stop()  # Verhindert, dass der Chat-Teil auf dem Dashboard gerendert wird
-
-# --- 4. DYNAMISCHES SKRIPT VERZEICHNIS ---
-verfuegbare_pdfs = []
-if os.path.exists("studienmaterial"):
-    
-    # Hilfsfunktion, die Zahlen im Dateinamen als echte Zahlen erkennt
-    def natural_sort_key(s):
-        # Zerlegt den String in Text- und Zahlenblöcke und wandelt Zahlen in Integer um
-        return [int(text) if text.isdigit() else text.lower() for text in re.split(r'(\d+)', s)]
-        
-    roh_pdfs = [f for f in os.listdir("studienmaterial") if f.endswith(".pdf")]
-    
-    # Hier wenden wir unseren neuen Sortier-Schlüssel an
-    verfuegbare_pdfs = sorted(roh_pdfs, key=natural_sort_key)
 
 # --- 6. BACKEND WISSEN (Google & RAG für Groq) ---
 @st.cache_resource
