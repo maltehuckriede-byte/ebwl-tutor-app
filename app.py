@@ -626,7 +626,7 @@ AKTUELLER FOLIENSATZ: {gewaehlter_foliensatz}
 
 # Quellen und Wahrheitstreue:
 - Stütze dich primär auf die bereitgestellten Folien und Auszüge.
-- Gib bei Sachverhaltsaussagen, die aus den Quellen stammen, eine kompakte Quellenangabe an (z.B. "Laut den Vorlesungsfolien...").
+- WICHTIG: Nenne NIEMALS exakte Seitenzahlen, Kapitelnummern oder Folienangaben (wie z.B. "auf Folie 18"). Diese weichen ab! Nutze stattdessen ausschließlich generische Verweise (z.B. "Laut den Vorlesungsfolien...").
 - Erfinde keine Definitionen, Zahlen oder Autoren. Wenn du etwas nicht weißt, sage sachlich: "Das kann ich aus den vorliegenden Materialien nicht sicher beantworten."
 
 # Didaktisches Vorgehen:
@@ -809,8 +809,15 @@ if user_input or uploaded_image:
 
     elif user_input_lower.startswith("/quiz"):
         st.session_state.active_mode = "quiz"
-        system_override = "QUIZ-MODUS: Stelle genau eine Frage (Offen oder MC) passend zum aktuellen Skript. Warte auf die Antwort."
-
+        system_override = (
+            "QUIZ-MODUS: Stelle genau eine Frage (Offen oder MC) passend zum aktuellen Skript. "
+            "\n\nWICHTIGE FORMATIERUNG FÜR MC-FRAGEN: "
+            "Klatsche die Antwortmöglichkeiten NIEMALS in einen Fließtext. "
+            "Du MUSST die Optionen A, B, C und D zwingend als untereinanderstehende Liste formatieren. "
+            "Nutze für jede Option einen eigenen Absatz und setze den Buchstaben fett (z.B. **A)** [Antworttext]). "
+            "\n\nWarte auf die Antwort des Nutzers."
+        )
+        
     # 🚨 NEU: Das heimliche Tracking-System für Nutzer-Antworten!
     if not user_input_lower.startswith("/") and st.session_state.active_mode in ["quiz", "klausur"]:
         system_override += "\n\nWICHTIG FÜR DAS TRACKING: Der Nutzer hat gerade eine inhaltliche Frage beantwortet. Bewerte diese Antwort! Hänge ganz am Ende deiner Ausgabe ZWINGEND folgenden unsichtbaren HTML-Tag an: <eval ERGEBNIS SICHERHEIT>. (Wähle zutreffend 'richtig' oder 'falsch' und schätze die Metakognition/Sicherheit des Nutzers anhand seiner Formulierung auf 'sicher', 'unsicher' oder 'geraten'). Beispiel: <eval richtig sicher>"
