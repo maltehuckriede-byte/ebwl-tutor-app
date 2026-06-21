@@ -635,6 +635,14 @@ AKTUELLER FOLIENSATZ: {gewaehlter_foliensatz}
 # Didaktisches Vorgehen:
 - Wenn der Nutzer einen Fehler macht, stelle eine Hilfsfrage, anstatt sofort die Lösung zu präsentieren. Führe ihn zur richtigen Antwort.
 - Liefere keine Komplettlösungen für Rechenaufgaben sofort. Zerlege Aufgaben in Einzelschritte und frage den ersten Schritt ab.
+
+# WICHTIGE FORMAT-REGELN FÜR SPEZIALBEFEHLE:
+
+1. WENN DER NUTZER "/karten" VERLANGT: 
+   Du MUSST die Antworten (die Rückseite der Karteikarte) extrem kurz, prägnant und stichpunktartig halten! Verwende MAXIMAL 3 Bulletpoints oder maximal 40 Wörter pro Karte. Die Texte müssen auf ein kleines Stück Papier passen. Vermeide lange Fließtexte komplett!
+
+2. WENN DER NUTZER "/zettel" VERLANGT:
+   Du MUSST eine extrem detaillierte, lange und tiefgreifende Zusammenfassung generieren. Geize nicht mit Wörtern! Nutze klare Überschriften, ausführliche Erklärungen, Beispiele aus der BWL und Aufzählungen. Ein Lernzettel muss den Studierenden perfekt auf die Klausur vorbereiten und darf auf keinen Fall zu kurz ausfallen.
 """
 
 LADE_ZITATE = [
@@ -700,8 +708,43 @@ if st.session_state.current_page == "chat":
         if st.button("Klausur-Modus (Start/Auswerten)", use_container_width=True): action = "/klausur"
         if st.button("Sokratischer Modus", use_container_width=True): action = "/sokratisch"
 
-# 8.3 Eingabe verarbeiten (Textfeld ODER Button-Klick)
-prompt = st.chat_input("Frage zum Skript stellen...")
+# 8.3 Eingabe verarbeiten (Textfeld ODER Button-Klick ODER Kachel)
+prompt = None
+
+if gewaehlter_foliensatz != "Kein Foliensatz gewählt":
+    prompt = st.chat_input(f"Frage zu {gewaehlter_foliensatz} stellen...")
+    
+    # MAGIC UX: Kacheln anzeigen, wenn der Chat noch komplett leer ist
+    if len(st.session_state.messages) == 0:
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        st.markdown("<h3 style='text-align: center; color: gray;'>Womit wollen wir heute starten?</h3>", unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # 3x2 Raster für die 6 Kacheln
+        col1, col2, col3 = st.columns(3)
+        col4, col5, col6 = st.columns(3)
+        
+        if col1.button("🎯 Quiz starten", use_container_width=True): 
+            prompt = "/quiz Prüfe mein Wissen!"
+        if col2.button("📇 Karteikarten generieren", use_container_width=True): 
+            prompt = "/karten Erstelle mir Karteikarten zum Foliensatz."
+        if col3.button("📝 Lernzettel erstellen", use_container_width=True): 
+            prompt = "/zettel Fasse die wichtigsten Kernkonzepte zusammen."
+        
+        st.write("") # Abstandhalter zwischen den Reihen
+        
+        if col4.button("📊 Erkläre den Break-Even-Point", use_container_width=True): 
+            prompt = "Erkläre mir den Break-Even-Point einfach und mit einem Beispiel bezogen auf das Skript."
+        if col5.button("🤔 Was ist die ABC-Analyse?", use_container_width=True): 
+            prompt = "Was ist die ABC-Analyse und wofür braucht man sie in der BWL?"
+        if col6.button("💡 Klausur-Tipp geben", use_container_width=True): 
+            prompt = "Gib mir eine typische Klausur-Transferaufgabe basierend auf diesem Foliensatz."
+            
+else:
+    # Eure Sicherheits-Sperre bleibt voll erhalten, wenn kein PDF da ist:
+    prompt = st.chat_input("Wähle zuerst einen Foliensatz aus, um zu chatten...", disabled=True)
+
+# Hier läuft jetzt alles zusammen: Egal ob Tastatur, Popover-Menü oder Start-Kachel!
 user_input = prompt or action
 
 if user_input or uploaded_image:
@@ -732,9 +775,6 @@ if user_input or uploaded_image:
     
     # 🚨 FIX: Auch hier den edlen Avatar übergeben
     with st.chat_message("user", avatar="👤"): 
-        st.markdown(ui_message)
-    
-    with st.chat_message("user"): 
         st.markdown(ui_message)
 
     # ==========================================
