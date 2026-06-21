@@ -11,7 +11,6 @@ import time
 from fpdf import FPDF
 from PIL import Image
 from supabase import create_client, Client
-import streamlit as st
 import hashlib
 
 # --- 1. SETUP & API-CLIENTS ---
@@ -330,8 +329,6 @@ if "messages" not in st.session_state: st.session_state.messages = []
 if "level" not in st.session_state: st.session_state.level = "Solide"
 if "klausur_modus" not in st.session_state: st.session_state.klausur_modus = False
 if "active_mode" not in st.session_state: st.session_state.active_mode = None
-if "klausur_modus" not in st.session_state: st.session_state.klausur_modus = False
-if "active_mode" not in st.session_state: st.session_state.active_mode = None
 # 🚨 NEU: Der Schlüssel, um den Bilder-Uploader zu leeren
 if "uploader_key" not in st.session_state: st.session_state.uploader_key = 0
 
@@ -354,31 +351,74 @@ if st.session_state.current_page == "login":
     col1, col2, col3 = st.columns([1, 1.5, 1])
     with col2:
         st.write("") 
-        st.markdown("<h1 style='text-align: center; color: #00549F;'>Wolf of Wüllnerstraße</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; color: gray; margin-top: -15px;'>RWTH Aachen | EBWL Lernbot</p>", unsafe_allow_html=True)
+        st.markdown("<h1 style='text-align: center; color: var(--primary-color);'>EBWL Lernbot</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: gray; margin-top: -15px;'>RWTH Aachen | Interaktiver Tutor</p>", unsafe_allow_html=True)
         st.markdown("---")
         
-        new_user = st.text_input("Wie lautet dein Name?")
-        beta_code = st.text_input("Zugangscode:", type="password")
+        # 1. Die doppelten Felder sind weg! Nur noch Name und persönliches Passwort.
+        username_input = st.text_input("Wie lautet dein Benutzername?")
+        password_input = st.text_input("Wähle ein Passwort (oder logge dich ein):", type="password")
         
         st.write("") 
-        if st.button("Anmelden", use_container_width=True):
-            if beta_code != "PITCH2026": 
-                st.error("❌ Falscher Zugangscode!")
-            elif not new_user: 
-                st.error("Bitte gib einen Namen ein!")
+        if st.button("Anmelden", use_container_width=True, type="primary"):
+            if not username_input or not password_input: 
+                st.error("Bitte gib einen Namen und ein Passwort ein!")
             else:
-                st.session_state.username = new_user
+                # Passwort kryptografisch verschlüsseln (Hashing)
+                hashed_pw = hashlib.sha256(password_input.encode()).hexdigest()
                 
-                # Cloud anrufen und Nutzer laden oder neu anlegen
-                user_data = load_user_data(new_user)
-                if user_data and "chat_history" in user_data and user_data["chat_history"]:
-                    st.session_state.messages = user_data["chat_history"]
+                user_data = load_user_data(username_input)
+                
+                if user_data and user_data.get("password_hash"):
+                    if user_data["password_hash"] == hashed_pw:
+                        st.session_state.username = username_input
+                        st.session_state.messages = user_data.get("chat_history", [])
+                        st.session_state.current_page = "dashboard"
+                        st.rerun()
+                    else:
+                        st.error("❌ Dieser Name ist bereits vergeben oder dein Passwort ist falsch!")
                 else:
+                    if user_data is None: user_data = {}
+                    user_data["password_hash"] = hashed_pw
+                    save_user_data(username_input, user_data)
+                    
+                    st.success("Account erfolgreich erstellt! Logge ein...")
+                    st.session_state.username = username_input
                     st.session_state.messages = []
+                    st.session_state.current_page = "dashboard"
+                    import time
+                    time.sleep(1)
+                    st.rerun()
+
+        st.write("")
+        st.write("")
+
+        # 2. Die versteckte Admin-Hintertür für euch
+        with st.expander("🛠️ Admin-Bereich (Passwörter verwalten)"):
+            admin_pw = st.text_input("Admin-Masterpasswort:", type="password")
+            
+            # Hier nutzen wir euer altes Zugangspasswort als geheimen Admin-Schlüssel
+            if admin_pw == "PITCH2026":
+                st.success("Admin-Zugriff gewährt!")
+                target_user = st.text_input("Nutzername des Kommilitonen:")
+                new_user_pw = st.text_input("Neues Passwort vergeben:", type="password")
                 
-                st.session_state.current_page = "dashboard"
-                st.rerun()
+                if st.button("Passwort überschreiben"):
+                    if not target_user or not new_user_pw:
+                        st.warning("Bitte beide Felder ausfüllen.")
+                    else:
+                        target_data = load_user_data(target_user)
+                        # Prüfen, ob der Nutzer überhaupt existiert
+                        if target_data and target_data.get("password_hash"):
+                            # Neues Passwort hashen und speichern
+                            target_data["password_hash"] = hashlib.sha256(new_user_pw.encode()).hexdigest()
+                            save_user_data(target_user, target_data)
+                            st.success(f"✅ Das Passwort für '{target_user}' wurde erfolgreich geändert!")
+                        else:
+                            st.error("❌ Nutzer nicht gefunden!")
+            elif admin_pw:
+                st.error("Falsches Admin-Passwort!")
+
     st.stop()
 
 # --- 5. SEITENLEISTE ---
@@ -821,6 +861,11 @@ if user_input or uploaded_image:
                         neue_nachricht["is_flashcard"] = True
                         
                     st.session_state.messages.append(neue_nachricht)
+
+                    # 🚨 FIX: Den Chatverlauf nach JEDER Nachricht in die Cloud pushen
+                    user_data = load_user_data(st.session_state.username)
+                    if user_data:
+                        save_user_data(st.session_state.username, user_data)
 
                     # 🚨 NEU: Bild aus dem Zwischenspeicher löschen, um Endlosschleife zu verhindern
                     if uploaded_image:
