@@ -882,6 +882,10 @@ if user_input or uploaded_image:
                 
                 # --- ANTWORT VERARBEITEN ---
                 if answer:
+
+                    # 🚨 DIE NOTBREMSE: Löscht alle hartnäckigen Folien/Seiten-Referenzen per Regex
+                    # Sucht nach: "Auf Folie X", "Folie X", "Seite Y", "S. Y" etc.
+                    answer = re.sub(r'(?i)(auf\s+)?(folie|seite|s\.)\s*\d+', '', answer)
                     
                     # 🚨 NEU: EVAL-Tag auslesen und Lernfortschritt in Datenbank speichern
                     eval_match = re.search(r'<eval\s+(richtig|falsch)\s+(sicher|unsicher|geraten)>', answer, re.IGNORECASE)
