@@ -811,11 +811,14 @@ if user_input or uploaded_image:
         st.session_state.active_mode = "quiz"
         system_override = (
             "QUIZ-MODUS: Stelle genau eine Frage (Offen oder MC) passend zum aktuellen Skript. "
-            "\n\nWICHTIGE FORMATIERUNG FÜR MC-FRAGEN: "
-            "Klatsche die Antwortmöglichkeiten NIEMALS in einen Fließtext. "
-            "Du MUSST die Optionen A, B, C und D zwingend als untereinanderstehende Liste formatieren. "
-            "Nutze für jede Option einen eigenen Absatz und setze den Buchstaben fett (z.B. **A)** [Antworttext]). "
-            "\n\nWarte auf die Antwort des Nutzers."
+            "\n\nWICHTIGE FORMATIERUNG FÜR MC-FRAGEN: Verwende ZWINGEND eine Aufzählung mit Spiegelstrichen! "
+            "Halte dich exakt an dieses Template:\n\n"
+            "[Deine Frage]\n\n"
+            "- **A)** [Option 1]\n"
+            "- **B)** [Option 2]\n"
+            "- **C)** [Option 3]\n"
+            "- **D)** [Option 4]\n\n"
+            "Schreibe die Optionen unter keinen Umständen als zusammenhängenden Fließtext in eine einzige Zeile."
         )
         
     # 🚨 NEU: Das heimliche Tracking-System für Nutzer-Antworten!
