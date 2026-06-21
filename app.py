@@ -455,9 +455,9 @@ with st.sidebar:
     st.markdown("---")
     col_btn1, col_btn2 = st.columns(2)
     with col_btn1:
-        # FIX: use_container_width statt dem veralteten width="stretch"
         if st.button("Abmelden", use_container_width=True):
             st.session_state.username = ""
+            st.session_state.current_page = "login" # 🚨 NEU: Wirft den Nutzer zurück zum Login
             st.rerun()
     with col_btn2:
         if st.button("Chat leeren", use_container_width=True):
