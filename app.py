@@ -230,12 +230,7 @@ def load_user_data(username):
         if len(response.data) > 0:
             user_data = response.data[0]
             
-            # Chatverlauf in Streamlit laden (falls vorhanden)
-            if "chat_history" in user_data and user_data["chat_history"]:
-                st.session_state.messages = user_data["chat_history"]
-            else:
-                st.session_state.messages = []
-                
+            # Wir geben die Daten nur zurück, ohne den Streamlit-Speicher zu manipulieren!   
             return user_data
         else:
             return {"username": username, "score": 0.0, "total_questions": 0, "level": "Einsteiger"} 
