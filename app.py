@@ -12,6 +12,7 @@ from fpdf import FPDF
 from PIL import Image
 from supabase import create_client, Client
 import streamlit as st
+import hashlib
 
 # --- 1. SETUP & API-CLIENTS ---
 st.set_page_config(page_title="Wolf of Wüllnerstraße | RWTH Aachen", page_icon="🐺", layout="wide")
