@@ -10,6 +10,8 @@ import re
 import time
 from fpdf import FPDF
 from PIL import Image
+from supabase import create_client, Client
+import streamlit as st
 
 # --- 1. SETUP & API-CLIENTS ---
 st.set_page_config(page_title="Wolf of Wüllnerstraße | RWTH Aachen", page_icon="🐺", layout="wide")
@@ -210,20 +212,49 @@ def render_premium_dashboard(username, total_q, accuracy, level, progress_data):
 
     st.html(css + kpi_html + cards_html)
 
-# --- 2. DATENBANK-SYSTEM & LERNFORTSCHRITT ---
-DATA_FILE = "savegames.json"
+# --- SUPABASE INITIALISIEREN ---
+@st.cache_resource
+def init_connection():
+    url = st.secrets["SUPABASE_URL"]
+    key = st.secrets["SUPABASE_KEY"]
+    return create_client(url, key)
 
-def load_data():
-    if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, "r") as f:
-            try: return json.load(f)
-            except: return {}
-    return {}
+supabase: Client = init_connection()
 
-def save_data(data):
-    with open(DATA_FILE, "w") as f: json.dump(data, f, indent=2)
+import json
 
-database = load_data()
+# --- DATEN LADEN ---
+def load_user_data(username):
+    try:
+        response = supabase.table("savegames").select("*").eq("username", username).execute()
+        if len(response.data) > 0:
+            user_data = response.data[0]
+            
+            # Chatverlauf in Streamlit laden (falls vorhanden)
+            if "chat_history" in user_data and user_data["chat_history"]:
+                st.session_state.messages = user_data["chat_history"]
+            else:
+                st.session_state.messages = []
+                
+            return user_data
+        else:
+            return {"username": username, "score": 0.0, "total_questions": 0, "level": "Einsteiger"} 
+    except Exception as e:
+        st.error(f"Datenbank-Fehler beim Laden: {e}")
+        return None
+
+# --- DATEN SPEICHERN ---
+def save_user_data(username, new_data):
+    try:
+        new_data["username"] = username
+        
+        # Den aktuellen Chatverlauf an das Speicherpaket anhängen
+        if "messages" in st.session_state:
+            new_data["chat_history"] = st.session_state.messages
+            
+        supabase.table("savegames").upsert(new_data).execute()
+    except Exception as e:
+        st.error(f"Datenbank-Fehler beim Speichern: {e}")
 
 # ==========================================
 # 📊 NEU: BERECHNUNGSLOGIK FÜR DAS DASHBOARD
@@ -255,9 +286,13 @@ def calculate_progress(stats_dict):
     return min(1.0, fortschritt)
 
 def record_learning_event(username, pdf_name, is_correct, level, confidence_str="sicher"):
-    """Speichert eine beantwortete Frage als Datenpunkt in der Datenbank ab."""
-    user_data = database.get(username, {})
-    if "progress" not in user_data:
+    """Speichert eine beantwortete Frage als Datenpunkt direkt in der Cloud ab."""
+    # 1. Aktuelle Daten aus der Cloud holen
+    user_data = load_user_data(username)
+    if not user_data: return
+    
+    # 2. Progress-Dictionary initialisieren, falls noch leer
+    if "progress" not in user_data or not user_data["progress"]:
         user_data["progress"] = {}
         
     if pdf_name not in user_data["progress"]:
@@ -271,7 +306,6 @@ def record_learning_event(username, pdf_name, is_correct, level, confidence_str=
     
     if is_correct:
         p_data["correct"] += 1
-        # Höchstes erreichtes Level updaten (Cap verschieben)
         levels = ["Einsteiger", "Solide", "Klausurniveau", "Maximal"]
         current_idx = levels.index(p_data["max_level"]) if p_data["max_level"] in levels else 0
         new_idx = levels.index(level) if level in levels else 0
@@ -279,16 +313,14 @@ def record_learning_event(username, pdf_name, is_correct, level, confidence_str=
         if new_idx > current_idx:
             p_data["max_level"] = level
             
-    # Confidence updaten (Gewichtung exakt nach Konzept Kapitel 6)
     conf_map = {"sicher": 1.0, "unsicher": 0.75, "geraten": 0.4}
     val = conf_map.get(confidence_str.lower(), 1.0)
     
-    # Neuen gleitenden Durchschnitt der Sicherheit berechnen
     p_data["avg_confidence"] = ((p_data["avg_confidence"] * (p_data["attempts"] - 1)) + val) / p_data["attempts"]
     p_data["last_update"] = time.time()
     
-    database[username] = user_data
-    save_data(database)
+    # 3. Aktualisierte Daten wieder in die Cloud schießen
+    save_user_data(username, user_data)
 
 # Initialisierung der Session States
 if "current_page" not in st.session_state: st.session_state.current_page = "login"
@@ -336,12 +368,14 @@ if st.session_state.current_page == "login":
                 st.error("Bitte gib einen Namen ein!")
             else:
                 st.session_state.username = new_user
-                if new_user not in database:
-                    database[new_user] = {"history": [], "progress": {}}
-                save_data(database)
-                st.session_state.messages = database[new_user].get("history", [])
                 
-                # Wir wechseln zum Dashboard statt direkt in den Chat!
+                # Cloud anrufen und Nutzer laden oder neu anlegen
+                user_data = load_user_data(new_user)
+                if user_data and "chat_history" in user_data and user_data["chat_history"]:
+                    st.session_state.messages = user_data["chat_history"]
+                else:
+                    st.session_state.messages = []
+                
                 st.session_state.current_page = "dashboard"
                 st.rerun()
     st.stop()
@@ -386,9 +420,14 @@ with st.sidebar:
             st.rerun()
     with col_btn2:
         if st.button("Chat leeren", use_container_width=True):
+            # 1. Chat im aktuellen Streamlit-Fenster leeren
             st.session_state.messages = [] 
-            database[st.session_state.username]["history"] = [] 
-            save_data(database)
+            
+            # 2. Aktuelle Daten aus der Cloud holen und leeren Chat überschreiben
+            user_data = load_user_data(st.session_state.username)
+            if user_data:
+                save_user_data(st.session_state.username, user_data)
+                
             st.rerun()
 
 # --- 3.5 LERN-DASHBOARD ---
@@ -398,7 +437,7 @@ if st.session_state.current_page == "dashboard":
     st.write("")
     
    # Echte Nutzerdaten abrufen
-    user_data = database.get(st.session_state.username, {})
+    user_data = load_user_data(st.session_state.username) or {}
     progress_data = user_data.get("progress", {})
     
     # KPIs berechnen
@@ -782,12 +821,6 @@ if user_input or uploaded_image:
                         
                     st.session_state.messages.append(neue_nachricht)
 
-                    database[st.session_state.username]["history"] = st.session_state.messages
-                    save_data(database)
-
-                    database[st.session_state.username]["history"] = st.session_state.messages
-                    save_data(database)
-                    
                     # 🚨 NEU: Bild aus dem Zwischenspeicher löschen, um Endlosschleife zu verhindern
                     if uploaded_image:
                         st.session_state.uploader_key += 1
