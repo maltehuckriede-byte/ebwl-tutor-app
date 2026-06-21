@@ -477,9 +477,11 @@ if st.session_state.current_page == "dashboard":
     st.markdown(f"Willkommen zurück, **{st.session_state.username}**. Hier ist dein aktueller Wissensstand basierend auf deinen Antworten und deiner Selbsteinschätzung.")
     st.write("")
     
-   # Echte Nutzerdaten abrufen
+    # Echte Nutzerdaten abrufen
     user_data = load_user_data(st.session_state.username) or {}
-    progress_data = user_data.get("progress", {})
+    
+    # 🚨 DER FIX: "or {}" fängt das leere Datenbankfeld sicher ab
+    progress_data = user_data.get("progress") or {}
     
     # KPIs berechnen
     total_questions = sum(p.get("attempts", 0) for p in progress_data.values())
