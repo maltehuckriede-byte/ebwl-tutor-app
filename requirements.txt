@@ -4,4 +4,4 @@ google-genai
 pypdf
 fpdf
 Pillow
-supabase==2.3.0
+supabase
