@@ -229,8 +229,8 @@ def load_user_data(username):
         response = supabase.table("savegames").select("*").eq("username", username).execute()
         if len(response.data) > 0:
             user_data = response.data[0]
-            
-            # Wir geben die Daten nur zurück, ohne den Streamlit-Speicher zu manipulieren!   
+                
+            # Wir geben die Daten nur zurück, ohne den Streamlit-Speicher zu manipulieren!
             return user_data
         else:
             return {"username": username, "score": 0.0, "total_questions": 0, "level": "Einsteiger"} 
@@ -346,7 +346,7 @@ if st.session_state.current_page == "login":
     col1, col2, col3 = st.columns([1, 1.5, 1])
     with col2:
         st.write("") 
-        st.markdown("<h1 style='text-align: center; color: var(--primary-color);'>EBWL Lernbot</h1>", unsafe_allow_html=True)
+        st.markdown("<h1 style='text-align: center; color: var(--primary-color);'>Wolf of Wüllnerstraße</h1>", unsafe_allow_html=True)
         st.markdown("<p style='text-align: center; color: gray; margin-top: -15px;'>RWTH Aachen | Interaktiver Tutor</p>", unsafe_allow_html=True)
         st.markdown("---")
         
@@ -472,7 +472,7 @@ if st.session_state.current_page == "dashboard":
     st.markdown(f"Willkommen zurück, **{st.session_state.username}**. Hier ist dein aktueller Wissensstand basierend auf deinen Antworten und deiner Selbsteinschätzung.")
     st.write("")
     
-    # Echte Nutzerdaten abrufen
+  # Echte Nutzerdaten abrufen
     user_data = load_user_data(st.session_state.username) or {}
     
     # 🚨 DER FIX: "or {}" fängt das leere Datenbankfeld sicher ab
@@ -588,20 +588,32 @@ def load_pdf_pages(filename):
             except Exception as e: st.error(f"PDF Lesefehler bei {datei}: {e}")
     return pages_dict
 
-def get_rag_context(prompt, pages_dict, top_k=3):
+def get_rag_context(prompt, pages_dict, top_k=5): # top_k auf 5 erhöht für besseren Kontext
     if not pages_dict: return ""
+    
+    # 🚨 FIX 1: Wenn es ein Befehl ist (z.B. /quiz), brauchen wir keine Keyword-Suche!
+    # Wir übergeben einfach direkt die ersten Seiten des gewählten PDFs.
+    if prompt.strip().startswith("/"):
+        return "\n".join(list(pages_dict.values())[:top_k])
+
     stopwords = {"was", "ist", "der", "die", "das", "und", "oder", "ein", "eine", "wie", "erkläre", "bitte"}
     prompt_words = set(re.findall(r'\w{3,}', prompt.lower())) - stopwords
+    
     if not prompt_words: return "\n".join(list(pages_dict.values())[:top_k])
+    
     scored = []
     for p_num, text in pages_dict.items():
         score = sum(text.lower().count(w) for w in prompt_words)
         scored.append((score, p_num, text))
+        
     scored.sort(key=lambda x: x[0], reverse=True)
     context = ""
     for score, p_num, text in scored[:top_k]:
         if score > 0: context += f"\n--- ABSCHNITT {p_num} ---\n{text}\n"
-    return context if context else "Keine direkten Treffer auf den Folien gefunden."
+        
+    # 🚨 FIX 2: Fallback! Falls die Nutzersuche gar keine Treffer auf den Folien hat, 
+    # geben wir trotzdem Text mit, damit Groq nicht halluziniert.
+    return context if context else "\n".join(list(pages_dict.values())[:top_k])
 
 # --- 7. SYSTEM PROMPT ---
 SYSTEM_PROMPT = f"""Du bist EBWL-Coach, ein spezialisierter Lernbegleiter für Studierende der Einführung in die Betriebswirtschaftslehre an der RWTH Aachen.
@@ -645,10 +657,10 @@ AKTUELLER FOLIENSATZ: {gewaehlter_foliensatz}
 """
 
 LADE_ZITATE = [
-    "Skript wird analysiert...",
-    "Klausurrelevanz wird geprüft...",
-    "Lernfortschritt wird synchronisiert...",
-    "Definitionen werden geladen..."
+    "Ein Geschäft, das nur Geld einbringt, ist ein schlechtes Geschäft. – Henry Ford",
+    "Für augenblicklichen Gewinn verkaufe ich die Zukunft nicht. - Werner von Siemens",
+    "Geld macht nicht korrupt - kein Geld schon eher. - Dieter Hildebrandt",
+    "Eine Investition in Wissen bringt noch immer die besten Zinsen. - Benjamin Franklin"
 ]
 
 # --- 8. BENUTZEROBERFLÄCHE & CHAT LOGIK ---
@@ -822,7 +834,7 @@ if user_input or uploaded_image:
             "- **D)** [Option 4]\n\n"
             "Schreibe die Optionen unter keinen Umständen als zusammenhängenden Fließtext in eine einzige Zeile."
         )
-        
+
     # 🚨 NEU: Das heimliche Tracking-System für Nutzer-Antworten!
     if not user_input_lower.startswith("/") and st.session_state.active_mode in ["quiz", "klausur"]:
         system_override += "\n\nWICHTIG FÜR DAS TRACKING: Der Nutzer hat gerade eine inhaltliche Frage beantwortet. Bewerte diese Antwort! Hänge ganz am Ende deiner Ausgabe ZWINGEND folgenden unsichtbaren HTML-Tag an: <eval ERGEBNIS SICHERHEIT>. (Wähle zutreffend 'richtig' oder 'falsch' und schätze die Metakognition/Sicherheit des Nutzers anhand seiner Formulierung auf 'sicher', 'unsicher' oder 'geraten'). Beispiel: <eval richtig sicher>"
@@ -846,7 +858,10 @@ if user_input or uploaded_image:
                     if not groq_client: st.error("Groq API Key fehlt!")
                     else:
                         pages_dict = load_pdf_pages(gewaehlter_foliensatz)
-                        rag_context = get_rag_context(prompt if prompt else "Zusammenfassung", pages_dict)
+                        
+                        # 🚨 FIX 3: user_input übergeben, damit die Funktion die Befehle (/quiz etc.) erkennt
+                        rag_context = get_rag_context(user_input, pages_dict, top_k=5)
+                        
                         groq_messages = [{"role": "system", "content": FINAL_SYSTEM_PROMPT + "\n\nAUSZUG AUS DEM SKRIPT:\n" + rag_context}]
                         for msg in st.session_state.messages[-8:]: groq_messages.append({"role": msg["role"], "content": msg["content"]})
                         
@@ -882,11 +897,11 @@ if user_input or uploaded_image:
                 
                 # --- ANTWORT VERARBEITEN ---
                 if answer:
-
+                    
                     # 🚨 DIE NOTBREMSE: Löscht alle hartnäckigen Folien/Seiten-Referenzen per Regex
                     # Sucht nach: "Auf Folie X", "Folie X", "Seite Y", "S. Y" etc.
                     answer = re.sub(r'(?i)(auf\s+)?(folie|seite|s\.)\s*\d+', '', answer)
-                    
+
                     # 🚨 NEU: EVAL-Tag auslesen und Lernfortschritt in Datenbank speichern
                     eval_match = re.search(r'<eval\s+(richtig|falsch)\s+(sicher|unsicher|geraten)>', answer, re.IGNORECASE)
                     if eval_match:
