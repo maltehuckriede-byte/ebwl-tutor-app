@@ -394,7 +394,7 @@ if st.session_state.current_page == "login":
             admin_pw = st.text_input("Admin-Masterpasswort:", type="password")
             
             # Hier nutzen wir euer altes Zugangspasswort als geheimen Admin-Schlüssel
-            if admin_pw == "PITCH2026":
+            if admin_pw == st.secrets.get("ADMIN_PASSWORD", "fallback_passwort_123"):
                 st.success("Admin-Zugriff gewährt!")
                 target_user = st.text_input("Nutzername des Kommilitonen:")
                 new_user_pw = st.text_input("Neues Passwort vergeben:", type="password")
