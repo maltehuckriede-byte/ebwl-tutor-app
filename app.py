@@ -12,6 +12,7 @@ from fpdf import FPDF
 from PIL import Image
 from supabase import create_client, Client
 import hashlib
+import time
 
 # --- 1. SETUP & API-CLIENTS ---
 st.set_page_config(page_title="Wolf of Wüllnerstraße | RWTH Aachen", page_icon="🐺", layout="wide")
@@ -896,12 +897,26 @@ if user_input or uploaded_image:
 
                         full_contents.extend(history_for_api)
                         
-                        response = google_client.models.generate_content(
-                            model='gemini-2.5-flash',
-                            contents=full_contents,
-                            config=types.GenerateContentConfig(system_instruction=FINAL_SYSTEM_PROMPT)
-                        )
-                        answer = response.text
+                        max_retries = 3
+                        for attempt in range(max_retries):
+                            try:
+                                response = google_client.models.generate_content(
+                                    model='gemini-2.5-flash',
+                                    contents=full_contents,
+                                    config=types.GenerateContentConfig(system_instruction=FINAL_SYSTEM_PROMPT)
+                                )
+                                answer = response.text
+                                break # Hat funktioniert! Wir brechen die Schleife ab.
+                                
+                            except Exception as e:
+                                # Wenn der Fehler "unavailable" enthält und wir noch Versuche übrig haben
+                                if "unavailable" in str(e).lower() and attempt < max_retries - 1:
+                                    wartezeit = 2 ** attempt # Wartet 1s, dann 2s, dann 4s
+                                    time.sleep(wartezeit)
+                                    continue # Nächster Versuch
+                                else:
+                                    # Bei anderen echten Fehlern (z.B. API Key falsch) werfen wir den Fehler weiter
+                                    raise e
                 
                 # --- ANTWORT VERARBEITEN ---
                 if answer:
