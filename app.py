@@ -660,7 +660,15 @@ LADE_ZITATE = [
     "Ein Geschäft, das nur Geld einbringt, ist ein schlechtes Geschäft. – Henry Ford",
     "Für augenblicklichen Gewinn verkaufe ich die Zukunft nicht. - Werner von Siemens",
     "Geld macht nicht korrupt - kein Geld schon eher. - Dieter Hildebrandt",
-    "Eine Investition in Wissen bringt noch immer die besten Zinsen. - Benjamin Franklin"
+    "Eine Investition in Wissen bringt noch immer die besten Zinsen. - Benjamin Franklin",
+    "Bankraub: eine Initiative von Dilettanten. Wahre Profis gründen eine Bank. - Bertolt Brecht",
+    "Die Werbung ist die Kunst, auf den Kopf zu zielen und die Breiftasche zu treffen. - Vance Packard",
+    "Die Jagd nach dem Sündenbock ist die einfachste. - Dwight D. Eisenhower",
+    "Bei den meisten Erfolgsmenschen ist der Erfolg größer als die Menschlichkeit. - Daphne du Maurier",
+    "Jede große Idee, sobald sie in die Erscheinung tritt, wirkt tyrannisch. - Johann Wolfgang von Goethe",
+    "Lach nie über die Dummheit der anderen. Sie ist deine Chance. - Winston Churchill",
+    "Das Geld zieht nur den Eigennutz an und verführt stets unwiderstehlich zum Missbrauch. - Albert Einstein"
+    "Nicht Sieg sollte der Sinn der Diskussion sein, sondern Gewinn. - Joseph Joubert"
 ]
 
 # --- 8. BENUTZEROBERFLÄCHE & CHAT LOGIK ---
