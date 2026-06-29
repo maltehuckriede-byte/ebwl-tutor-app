@@ -67,10 +67,8 @@ def display_html_flashcards(ai_text):
             front_text = front.replace("**", "").strip()
             back_text = back.replace("**", "").strip()
             
-            # 🚨 FIX: Eine garantiert einmalige ID für jede Karte generieren
             unique_id = f"card-{random.randint(1000000, 9999999)}-{i}"
             
-            # Premium HTML-Struktur mit Icons und einzigartiger ID
             cards_html += f"""
             <div class="card-box">
                 <input type="checkbox" id="{unique_id}" class="flip-checkbox" style="display:none;">
@@ -79,44 +77,54 @@ def display_html_flashcards(ai_text):
                         <div class="flip-card-front">
                             <div class="card-icon">❓</div>
                             <div class="card-header">FRAGE</div>
-                            <div class="card-content">{front_text}</div>
+                            <div class="card-content-wrapper">
+                                <div class="card-content">{front_text}</div>
+                            </div>
                             <div class="card-hint">Klicken zum Drehen</div>
                         </div>
                         <div class="flip-card-inner-back">
                             <div class="card-icon">💡</div>
                             <div class="card-header" style="color: #57AB27;">ANTWORT</div>
-                            <div class="card-content">{back_text}</div>
+                            <div class="card-content-wrapper">
+                                <div class="card-content" style="text-align: left; font-size: 14px; font-weight: 500;">{back_text}</div>
+                            </div>
                         </div>
                     </div>
                 </label>
             </div>
             """
             
-        # Premium CSS mit RWTH-Farben und flüssigen 3D-Schatten
         full_html = f"""
         <style>
             .container {{ display: flex; flex-wrap: wrap; gap: 25px; justify-content: center; font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; }}
             .card-box {{ display: inline-block; perspective: 1200px; }}
-            .flip-card {{ display: block; width: 300px; height: 210px; cursor: pointer; }}
+            /* Sweet-Spot Dimensionen: Etwas mehr Platz, ohne klobig zu wirken */
+            .flip-card {{ display: block; width: 320px; height: 240px; cursor: pointer; }}
             .flip-card-inner {{ position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1); transform-style: preserve-3d; }}
-            .flip-card-front, .flip-card-inner-back {{ position: absolute; width: 100%; height: 100%; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 16px; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: center; box-shadow: 0 8px 25px rgba(0,0,0,0.08); }}
-            .flip-card-front {{ background: linear-gradient(135deg, #00549F 0%, #003a6d 100%); color: #ffffff; border: none; }}
-            .flip-card-inner-back {{ background: #ffffff; color: #1e293b; transform: rotateY(180deg); border: 3px solid #57AB27; }}
-            .card-header {{ font-size: 12px; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1.5px; opacity: 0.9; }}
+            .flip-card-front, .flip-card-inner-back {{ position: absolute; width: 100%; height: 100%; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 16px; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; }}
+            .flip-card-front {{ background: linear-gradient(135deg, #00549F 0%, #003a6d 100%); color: #ffffff; border: none; align-items: center; }}
+            .flip-card-inner-back {{ background: #ffffff; color: #1e293b; transform: rotateY(180deg); border: 3px solid #57AB27; align-items: center; }}
+            .card-header {{ font-size: 12px; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1.5px; opacity: 0.9; text-align: center; }}
             .flip-card-front .card-header {{ color: #e2e8f0; }}
-            .card-content {{ font-size: 15px; font-weight: 600; line-height: 1.4; overflow-y: auto; flex-grow: 1; display: flex; align-items: center; justify-content: center; }}
-            .card-icon {{ font-size: 26px; margin-bottom: 5px; }}
-            .card-hint {{ font-size: 11px; font-weight: 500; opacity: 0.6; margin-top: auto; text-transform: uppercase; letter-spacing: 1px; }}
-            .card-content::-webkit-scrollbar {{ display: none; }}
+            
+            /* FIX: Sicherer Wrapper für den Text-Überlauf */
+            .card-content-wrapper {{ width: 100%; flex-grow: 1; overflow-y: auto; display: flex; align-items: center; margin-bottom: 5px; }}
+            .card-content {{ font-size: 15px; font-weight: 600; line-height: 1.4; width: 100%; margin: auto; }}
+            .card-icon {{ font-size: 26px; margin-bottom: 5px; text-align: center; }}
+            .card-hint {{ font-size: 11px; font-weight: 500; opacity: 0.6; margin-top: auto; text-transform: uppercase; letter-spacing: 1px; text-align: center; width: 100%; }}
+            
+            /* Stylischer, dezenter Scrollbalken für längere Antworten */
+            .card-content-wrapper::-webkit-scrollbar {{ width: 4px; }}
+            .card-content-wrapper::-webkit-scrollbar-thumb {{ background: rgba(0, 0, 0, 0.15); border-radius: 4px; }}
+            
             .flip-checkbox:checked + .flip-card .flip-card-inner {{ transform: rotateY(180deg); }}
-            /* Der neue Hover-Effekt (Karte hebt sich an) */
             .flip-card:hover .flip-card-inner {{ box-shadow: 0 15px 35px rgba(0,84,159,0.25); transform: translateY(-5px); transition: all 0.3s ease; }}
             .flip-checkbox:checked + .flip-card:hover .flip-card-inner {{ transform: rotateY(180deg) translateY(-5px); }}
         </style>
         <div class="container">{cards_html}</div>
         """
-        st.html(f'<div style="min-height: 250px;">{full_html}</div>')
-
+        st.html(f'<div style="min-height: 280px;">{full_html}</div>')
+        
 # ==========================================
 # 🎨 PREMIUM HTML/CSS DASHBOARD GENERATOR (OBSIDIAN THEME)
 # ==========================================
