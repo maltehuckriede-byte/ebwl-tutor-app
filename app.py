@@ -845,7 +845,7 @@ if user_input or uploaded_image:
     system_override = ""
     user_input_lower = user_input.strip().lower()
 
-   if user_input_lower.startswith("/klausur_start"):
+    if user_input_lower.startswith("/klausur_start"):
         parts = user_input_lower.split()
         f_anz = parts[1] if len(parts) > 1 else "3"
         z_min = parts[2] if len(parts) > 2 else "60"
