@@ -755,8 +755,8 @@ if st.session_state.current_page == "chat":
         if st.button("Lernzettel erstellen", use_container_width=True): action = "/zettel"
         with st.expander("🎓 Klausur-Simulator"):
             if not st.session_state.klausur_modus:
-                k_fragen = st.slider("Anzahl der Fragen:", 1, 10, 3)
-                k_zeit = st.slider("Simulierte Zeit (Minuten):", 10, 120, 60, step=10)
+                k_fragen = st.slider("Anzahl der Fragen:", 5, 35, 10)
+                k_zeit = st.slider("Simulierte Zeit (Minuten):", 10, 60, 20, step=5)
                 if st.button("Klausur starten", use_container_width=True, type="primary"):
                     action = f"/klausur_start {k_fragen} {k_zeit}"
             else:
