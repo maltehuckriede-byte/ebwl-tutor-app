@@ -668,7 +668,7 @@ LADE_ZITATE = [
     "Bei den meisten Erfolgsmenschen ist der Erfolg größer als die Menschlichkeit. - Daphne du Maurier",
     "Jede große Idee, sobald sie in die Erscheinung tritt, wirkt tyrannisch. - Johann Wolfgang von Goethe",
     "Lach nie über die Dummheit der anderen. Sie ist deine Chance. - Winston Churchill",
-    "Das Geld zieht nur den Eigennutz an und verführt stets unwiderstehlich zum Missbrauch. - Albert Einstein"
+    "Das Geld zieht nur den Eigennutz an und verführt stets unwiderstehlich zum Missbrauch. - Albert Einstein",
     "Nicht Sieg sollte der Sinn der Diskussion sein, sondern Gewinn. - Joseph Joubert"
 ]
 
