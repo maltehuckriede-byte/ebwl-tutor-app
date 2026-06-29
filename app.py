@@ -63,12 +63,13 @@ def display_html_flashcards(ai_text):
     if cards:
         cards_html = ""
         for i, (front, back) in enumerate(cards):
-            front_text = front.replace("**", "").strip()
-            back_text = back.replace("**", "").strip()
+            # FIX: Entfernt jegliche Aufzählungszeichen (*, -, •) am Anfang JEDER Zeile für ein absolut einheitliches Bild
+            front_text = re.compile(r'^[\s*•\-]+', re.MULTILINE).sub('', front).replace("**", "").strip()
+            back_text = re.compile(r'^[\s*•\-]+', re.MULTILINE).sub('', back).replace("**", "").strip()
             
-            # FIX: Entfernt verwaiste Trennlinien (---) am Anfang oder Ende der Texte
-            front_text = re.sub(r'^[-_*\s]{3,}|[-_*\s]{3,}$', '', front_text).strip()
-            back_text = re.sub(r'^[-_*\s]{3,}|[-_*\s]{3,}$', '', back_text).strip()
+            # Sicherheits-Check gegen verbleibende Trennlinien am Ende
+            front_text = re.sub(r'[-_*\s]{3,}$', '', front_text).strip()
+            back_text = re.sub(r'[-_*\s]{3,}$', '', back_text).strip()
             
             unique_id = f"card-{random.randint(1000000, 9999999)}-{i}"
             
@@ -81,7 +82,7 @@ def display_html_flashcards(ai_text):
                             <div class="card-icon">❓</div>
                             <div class="card-header">FRAGE</div>
                             <div class="card-content-wrapper" style="display: flex; align-items: center; justify-content: center;">
-                                <div class="card-content" style="text-align: center; margin: auto;">{front_text}</div>
+                                <div class="card-content" style="text-align: center; margin: auto; white-space: pre-line;">{front_text}</div>
                             </div>
                             <div class="card-hint">Klicken zum Drehen</div>
                         </div>
