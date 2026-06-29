@@ -56,10 +56,9 @@ def generate_pdf_bytes(thema, text):
 # 🃏 HELPER FÜR INTERAKTIVE KARTEIKARTEN (PREMIUM UI)
 # ==========================================
 def display_html_flashcards(ai_text):
-    # Regex bleibt identisch robust
-    cards = re.findall(r'(?:Vorderseite|Frage).*?\:\s*([^|\n]+)(?:\s*\|\s*|\n+)(?:Rückseite|Antwort).*?\:\s*([^\n]+)', ai_text, re.IGNORECASE)
-    if not cards:
-        cards = re.findall(r'\*\*(?:Vorderseite|Frage).*?\*\*\s*([^|\n]+)(?:\s*\|\s*|\n+)\*\*(?:Rückseite|Antwort).*?\*\*\s*([^\n]+)', ai_text, re.IGNORECASE)
+    # Neuer, ultra-robuster Regex, der zeilenübergreifende Antworten (re.DOTALL) erlaubt
+    pattern = r'(?:Vorderseite|Frage).*?:\s*(.*?)\s*(?:Rückseite|Antwort).*?:\s*(.*?)(?=\s*(?:Vorderseite|Frage).*?:|$)'
+    cards = re.findall(pattern, ai_text, re.DOTALL | re.IGNORECASE)
 
     if cards:
         cards_html = ""
@@ -86,7 +85,7 @@ def display_html_flashcards(ai_text):
                             <div class="card-icon">💡</div>
                             <div class="card-header" style="color: #57AB27;">ANTWORT</div>
                             <div class="card-content-wrapper">
-                                <div class="card-content" style="text-align: left; font-size: 14px; font-weight: 500;">{back_text}</div>
+                                <div class="card-content" style="text-align: left; align-items: flex-start; font-size: 13px; font-weight: 500; white-space: pre-line;">{back_text}</div>
                             </div>
                         </div>
                     </div>
@@ -98,22 +97,19 @@ def display_html_flashcards(ai_text):
         <style>
             .container {{ display: flex; flex-wrap: wrap; gap: 25px; justify-content: center; font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; }}
             .card-box {{ display: inline-block; perspective: 1200px; }}
-            /* Sweet-Spot Dimensionen: Etwas mehr Platz, ohne klobig zu wirken */
-            .flip-card {{ display: block; width: 320px; height: 240px; cursor: pointer; }}
+            .flip-card {{ display: block; width: 330px; height: 250px; cursor: pointer; }}
             .flip-card-inner {{ position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1); transform-style: preserve-3d; }}
             .flip-card-front, .flip-card-inner-back {{ position: absolute; width: 100%; height: 100%; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 16px; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; }}
             .flip-card-front {{ background: linear-gradient(135deg, #00549F 0%, #003a6d 100%); color: #ffffff; border: none; align-items: center; }}
             .flip-card-inner-back {{ background: #ffffff; color: #1e293b; transform: rotateY(180deg); border: 3px solid #57AB27; align-items: center; }}
-            .card-header {{ font-size: 12px; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1.5px; opacity: 0.9; text-align: center; }}
+            .card-header {{ font-size: 12px; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1.5px; opacity: 0.9; text-align: center; width: 100%; }}
             .flip-card-front .card-header {{ color: #e2e8f0; }}
             
-            /* FIX: Sicherer Wrapper für den Text-Überlauf */
             .card-content-wrapper {{ width: 100%; flex-grow: 1; overflow-y: auto; display: flex; align-items: center; margin-bottom: 5px; }}
-            .card-content {{ font-size: 15px; font-weight: 600; line-height: 1.4; width: 100%; margin: auto; }}
-            .card-icon {{ font-size: 26px; margin-bottom: 5px; text-align: center; }}
+            .card-content {{ font-size: 14px; font-weight: 600; line-height: 1.4; width: 100%; }}
+            .card-icon {{ font-size: 24px; margin-bottom: 5px; text-align: center; width: 100%; }}
             .card-hint {{ font-size: 11px; font-weight: 500; opacity: 0.6; margin-top: auto; text-transform: uppercase; letter-spacing: 1px; text-align: center; width: 100%; }}
             
-            /* Stylischer, dezenter Scrollbalken für längere Antworten */
             .card-content-wrapper::-webkit-scrollbar {{ width: 4px; }}
             .card-content-wrapper::-webkit-scrollbar-thumb {{ background: rgba(0, 0, 0, 0.15); border-radius: 4px; }}
             
@@ -123,7 +119,7 @@ def display_html_flashcards(ai_text):
         </style>
         <div class="container">{cards_html}</div>
         """
-        st.html(f'<div style="min-height: 280px;">{full_html}</div>')
+        st.html(f'<div style="min-height: 290px;">{full_html}</div>')
         
 # ==========================================
 # 🎨 PREMIUM HTML/CSS DASHBOARD GENERATOR (OBSIDIAN THEME)
@@ -695,11 +691,17 @@ if st.session_state.current_page == "chat":
             if message.get("is_flashcard"):
                 cards_found = re.search(r'(?:Vorderseite|Frage).*?\:', message["content"], re.IGNORECASE)
                 if cards_found:
-                    clean_text = re.sub(r'(?i).*(?:Vorderseite|Frage|Rückseite|Antwort).*', '', message["content"])
+                    # Löscht die kompletten Frage- und Antwortblöcke restlos aus der normalen Chatblase
+                    pattern = r'(?:Vorderseite|Frage).*?:\s*(.*?)\s*(?:Rückseite|Antwort).*?:\s*(.*?)(?=\s*(?:Vorderseite|Frage).*?:|$)'
+                    clean_text = re.sub(pattern, '', message["content"], flags=re.DOTALL | re.IGNORECASE)
                     clean_text = re.sub(r'[-_*]{3,}', '', clean_text)
                     clean_text = re.sub(r'\n\s*\n', '\n\n', clean_text).strip()
+                    
+                    # Zeigt nur noch den netten Einleitungssatz im Chat an (z.B. "Hier sind deine Karten:")
                     if clean_text:
                         st.markdown(clean_text)
+                    
+                    # Rendert die vollgepackten 3D-Karten direkt darunter
                     display_html_flashcards(message["content"])
                 else:
                     st.markdown(message["content"])
