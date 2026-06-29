@@ -568,22 +568,34 @@ if st.session_state.current_page == "dashboard":
 
 # --- 6. BACKEND WISSEN (Google & RAG für Groq) ---
 @st.cache_resource
-def get_google_files(filename):
+def get_google_files(filename, force_altklausur=False):
     hochgeladene_dateien = []
     if google_client and filename != "Kein Skript gefunden":
         dateien_zum_laden = [f for f in os.listdir("studienmaterial") if f.endswith(".pdf")] if filename == "Alle Foliensätze" else [filename]
         
+        # NEU: Zieht immer die Altklausuren heran, wenn der Modus aktiv ist
+        if force_altklausur and "Altklausuren.pdf" not in dateien_zum_laden:
+            alt_path = os.path.join("studienmaterial", "Altklausuren.pdf")
+            if os.path.exists(alt_path):
+                dateien_zum_laden.append("Altklausuren.pdf")
+                
         for datei in dateien_zum_laden:
             file_path = os.path.join("studienmaterial", datei)
             hochgeladene_dateien.append(google_client.files.upload(file=file_path))
     return hochgeladene_dateien
 
 @st.cache_data
-def load_pdf_pages(filename):
+def load_pdf_pages(filename, force_altklausur=False):
     pages_dict = {}
     if filename != "Kein Skript gefunden":
         dateien_zum_laden = [f for f in os.listdir("studienmaterial") if f.endswith(".pdf")] if filename == "Alle Foliensätze" else [filename]
         
+        # NEU: Zieht immer die Altklausuren heran, wenn der Modus aktiv ist
+        if force_altklausur and "Altklausuren.pdf" not in dateien_zum_laden:
+            alt_path = os.path.join("studienmaterial", "Altklausuren.pdf")
+            if os.path.exists(alt_path):
+                dateien_zum_laden.append("Altklausuren.pdf")
+                
         global_page_count = 1
         for datei in dateien_zum_laden:
             file_path = os.path.join("studienmaterial", datei)
@@ -741,7 +753,16 @@ if st.session_state.current_page == "chat":
         
         st.markdown("---")
         if st.button("Lernzettel erstellen", use_container_width=True): action = "/zettel"
-        if st.button("Klausur-Modus (Start/Auswerten)", use_container_width=True): action = "/klausur"
+        with st.expander("🎓 Klausur-Simulator"):
+            if not st.session_state.klausur_modus:
+                k_fragen = st.slider("Anzahl der Fragen:", 1, 10, 3)
+                k_zeit = st.slider("Simulierte Zeit (Minuten):", 10, 120, 60, step=10)
+                if st.button("Klausur starten", use_container_width=True, type="primary"):
+                    action = f"/klausur_start {k_fragen} {k_zeit}"
+            else:
+                st.info("Klausur läuft gerade im Hintergrund!")
+                if st.button("Klausur abgeben & Auswerten", use_container_width=True, type="primary"):
+                    action = "/klausur_ende"
         if st.button("Sokratischer Modus", use_container_width=True): action = "/sokratisch"
 
 # 8.3 Eingabe verarbeiten (Textfeld ODER Button-Klick ODER Kachel)
@@ -793,11 +814,16 @@ if user_input or uploaded_image:
     if user_input.startswith("/karten"):
         anzahl = user_input.split()[1] if len(user_input.split()) > 1 else "3"
         ui_message = f"🃏 Erstelle mir bitte {anzahl} Karteikarten zum aktuellen Thema."
+    elif user_input.startswith("/klausur_start"):
+        parts = user_input.split()
+        f_anz = parts[1] if len(parts) > 1 else "3"
+        z_min = parts[2] if len(parts) > 2 else "60"
+        ui_message = f"🎓 Ich bin bereit. Starte eine Klausur mit {f_anz} Fragen. Ich habe {z_min} Minuten Zeit."
     else:
         display_texts = {
             "/quiz": "📝 Ich möchte ein kurzes Quiz starten.",
             "/zettel": "📄 Fasse das aktuelle Thema als kompakten Lernzettel zusammen.",
-            "/klausur": "🎓 Lass uns den Klausur-Modus starten (bzw. auswerten, falls wir mittendrin sind).",
+            "/klausur_ende": "🛑 Ich gebe meine Klausur ab. Bitte werte alle meine Antworten jetzt schonungslos aus.",
             "/sokratisch": "🤔 Aktiviere den sokratischen Modus für mich."
         }
         ui_message = display_texts.get(user_input, user_input)
@@ -819,16 +845,21 @@ if user_input or uploaded_image:
     system_override = ""
     user_input_lower = user_input.strip().lower()
 
-    if user_input_lower.startswith("/klausur"):
-        if st.session_state.klausur_modus:
-            st.session_state.klausur_modus = False
-            st.session_state.active_mode = None
-            system_override = "Bewerte nun die gesamte Klausur schrittweise. Vergib Teilpunkte (z.B. Formel korrekt 2/2, Rechenfehler 1/2) und stelle eine Schlussbewertung zusammen."
-        else:
-            st.session_state.klausur_modus = True
-            st.session_state.active_mode = "klausur"
-            system_override = "Starte den Klausur-Modus. Stelle eine vollständige, mehrstufige Klausuraufgabe (rechnen + argumentieren). Nenne NICHT die Lösung. Warte auf die erste Teilantwort des Nutzers."
+   if user_input_lower.startswith("/klausur_start"):
+        parts = user_input_lower.split()
+        f_anz = parts[1] if len(parts) > 1 else "3"
+        z_min = parts[2] if len(parts) > 2 else "60"
+        st.session_state.klausur_modus = True
+        st.session_state.active_mode = "klausur"
+        system_override = f"KLAUSUR-MODUS GESTARTET: Stelle insgesamt {f_anz} Prüfungsfragen. Orientierung: Nutze unbedingt den Stil der Altklausuren und kombiniere ihn mit dem aktuellen Foliensatz. Der Nutzer hat simuliert {z_min} Minuten Zeit. WICHTIGSTE REGEL: Bewerte die Antworten im Text NOCH NICHT! Bestätige nur den Eingang der Antwort sachlich und stelle die nächste Frage. Gib erst eine Text-Bewertung ab, wenn der Nutzer die Klausur explizit abgibt."
 
+    elif user_input_lower == "/klausur_ende":
+        st.session_state.klausur_modus = False
+        st.session_state.active_mode = None
+        system_override = "KLAUSUR-ABGABE: Der Nutzer hat die Klausur beendet. Bewerte nun ALLE in dieser Sitzung gegebenen Antworten schrittweise. Vergib Teilpunkte (z.B. 2/5). Gib am Ende ein ehrliches Gesamtfazit und nenne 1-2 konkrete Schwachstellen oder Foliensätze, die der Nutzer sich vor der echten Prüfung dringend nochmal ansehen muss."
+
+    elif st.session_state.klausur_modus:
+        system_override = "KLAUSUR LÄUFT: Der Nutzer beantwortet gerade eine Klausurfrage. Nimm die Antwort auf, aber KORRIGIERE SIE IM TEXT NOCH NICHT. Verrate keine Lösungen, lobe oder tadle nicht. Stelle einfach direkt die nächste Frage oder weise ihn darauf hin, dass er alle Fragen beantwortet hat und die Klausur über das Menü abgeben soll."
     elif st.session_state.klausur_modus:
         system_override = "Der Nutzer bearbeitet gerade eine Klausuraufgabe. Führe ihn schrittweise durch die Aufgabe. Korrigiere fehlerhafte Teilaspekte, bevor du zum nächsten Schritt übergehst."
 
@@ -882,7 +913,7 @@ if user_input or uploaded_image:
                 # --- GROQ PFAD ---
                     if not groq_client: st.error("Groq API Key fehlt!")
                     else:
-                        pages_dict = load_pdf_pages(gewaehlter_foliensatz)
+                        pages_dict = load_pdf_pages(gewaehlter_foliensatz, force_altklausur=st.session_state.klausur_modus)
                         
                         # 🚨 FIX 3: user_input übergeben, damit die Funktion die Befehle (/quiz etc.) erkennt
                         rag_context = get_rag_context(user_input, pages_dict, top_k=5)
@@ -900,7 +931,7 @@ if user_input or uploaded_image:
                 else:
                     if not google_client: st.error("Google API Key fehlt!")
                     else:
-                        google_files = get_google_files(gewaehlter_foliensatz)
+                        google_files = get_google_files(gewaehlter_foliensatz, force_altklausur=st.session_state.klausur_modus)
                         history_for_api = [msg["content"] for msg in st.session_state.messages[-8:]]
                         
                         full_contents = []
