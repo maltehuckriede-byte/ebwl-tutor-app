@@ -687,41 +687,41 @@ if st.session_state.current_page == "chat":
     st.markdown("---")
 
 # 8.1 Chat-Verlauf rendern
-        for i, message in enumerate(st.session_state.messages):
-            avatar_icon = "👤" if message["role"] == "user" else "🎓"
+    for i, message in enumerate(st.session_state.messages):
+        avatar_icon = "👤" if message["role"] == "user" else "🎓"
             
-            with st.chat_message(message["role"], avatar=avatar_icon): 
-                if message.get("is_flashcard"):
-                    cards_found = re.search(r'(?:Vorderseite|Frage).*?\:', message["content"], re.IGNORECASE)
-                    if cards_found:
-                        # FIX: Flexiblerer Matcher, der alles von "Vorderseite/Frage" bis zum Doppelpunkt erfasst
-                        first_card_match = re.search(r'(?:Vorderseite|Frage).*?:', message["content"], re.IGNORECASE)
-                        if first_card_match:
-                            clean_text = message["content"][:first_card_match.start()]
-                        else:
-                            clean_text = message["content"]
-                            
-                        # Bereinigt zuverlässig alle verbleibenden Markdown-Reste (*, **, -, \n) am Ende des Intros
-                        clean_text = re.sub(r'[\s*_\-]+$', '', clean_text).strip()
-                        
-                        if clean_text:
-                            st.markdown(clean_text)
-                        
-                        display_html_flashcards(message["content"])
+        with st.chat_message(message["role"], avatar=avatar_icon): 
+            if message.get("is_flashcard"):
+                cards_found = re.search(r'(?:Vorderseite|Frage).*?\:', message["content"], re.IGNORECASE)
+                if cards_found:
+                    # FIX: Flexiblerer Matcher, der alles von "Vorderseite/Frage" bis zum Doppelpunkt erfasst
+                    first_card_match = re.search(r'(?:Vorderseite|Frage).*?:', message["content"], re.IGNORECASE)
+                    if first_card_match:
+                        clean_text = message["content"][:first_card_match.start()]
                     else:
-                        st.markdown(message["content"])
+                        clean_text = message["content"]
+                            
+                    # Bereinigt zuverlässig alle verbleibenden Markdown-Reste (*, **, -, \n) am Ende des Intros
+                    clean_text = re.sub(r'[\s*_\-]+$', '', clean_text).strip()
+                        
+                    if clean_text:
+                        st.markdown(clean_text)
+                        
+                    display_html_flashcards(message["content"])
                 else:
                     st.markdown(message["content"])
+            else:
+                st.markdown(message["content"])
                 
-                if "pdf_data" in message:
-                    st.download_button(
-                        label="📄 Lernzettel herunterladen (PDF)",
-                        data=message["pdf_data"],
-                        file_name=message["pdf_name"],
-                        mime="application/pdf",
-                        key=f"dl_btn_{i}"
-                    )
-                    
+            if "pdf_data" in message:
+                st.download_button(
+                    label="📄 Lernzettel herunterladen (PDF)",
+                    data=message["pdf_data"],
+                    file_name=message["pdf_name"],
+                    mime="application/pdf",
+                    key=f"dl_btn_{i}"
+                )
+                
     # 8.2 Das bereinigte Aktions-Menü (Ohne Emoji-Salad in den Buttons)
     action = None
     uploaded_image = None 
