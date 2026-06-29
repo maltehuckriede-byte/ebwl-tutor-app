@@ -686,12 +686,11 @@ if st.session_state.current_page == "chat":
     st.title(f"Wolf of Wüllnerstraße | {st.session_state.username}")
     st.markdown("---")
 
-    # 8.1 Chat-Verlauf rendern
+# 8.1 Chat-Verlauf rendern
     for i, message in enumerate(st.session_state.messages):
-        # 🚨 FIX: Filigrane, minimalistische Avatare statt bunter Comic-Blöcke
         avatar_icon = "👤" if message["role"] == "user" else "🎓"
         
-       with st.chat_message(message["role"], avatar=avatar_icon): 
+        with st.chat_message(message["role"], avatar=avatar_icon): 
             if message.get("is_flashcard"):
                 cards_found = re.search(r'(?:Vorderseite|Frage).*?\:', message["content"], re.IGNORECASE)
                 if cards_found:
