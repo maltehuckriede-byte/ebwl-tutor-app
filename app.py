@@ -336,6 +336,8 @@ if "klausur_modus" not in st.session_state: st.session_state.klausur_modus = Fal
 if "active_mode" not in st.session_state: st.session_state.active_mode = None
 # 🚨 NEU: Der Schlüssel, um den Bilder-Uploader zu leeren
 if "uploader_key" not in st.session_state: st.session_state.uploader_key = 0
+if "klausur_aktuelle_frage" not in st.session_state: st.session_state.klausur_aktuelle_frage = 1
+if "klausur_max_fragen" not in st.session_state: st.session_state.klausur_max_fragen = 10
 
 # --- 4. DYNAMISCHES SKRIPT VERZEICHNIS ---
 verfuegbare_pdfs = []
@@ -346,7 +348,7 @@ if os.path.exists("studienmaterial"):
         # Zerlegt den String in Text- und Zahlenblöcke und wandelt Zahlen in Integer um
         return [int(text) if text.isdigit() else text.lower() for text in re.split(r'(\d+)', s)]
         
-    roh_pdfs = [f for f in os.listdir("studienmaterial") if f.endswith(".pdf")]
+    roh_pdfs = [f for f in os.listdir("studienmaterial") if f.endswith(".pdf") and f != "Altklausuren.pdf"]
     
     # Hier wenden wir unseren neuen Sortier-Schlüssel an
     verfuegbare_pdfs = sorted(roh_pdfs, key=natural_sort_key)
@@ -756,9 +758,8 @@ if st.session_state.current_page == "chat":
         with st.expander("🎓 Klausur-Simulator"):
             if not st.session_state.klausur_modus:
                 k_fragen = st.slider("Anzahl der Fragen:", 5, 35, 10)
-                k_zeit = st.slider("Simulierte Zeit (Minuten):", 10, 60, 20, step=5)
                 if st.button("Klausur starten", use_container_width=True, type="primary"):
-                    action = f"/klausur_start {k_fragen} {k_zeit}"
+                    action = f"/klausur_start {k_fragen}"
             else:
                 st.info("Klausur läuft gerade im Hintergrund!")
                 if st.button("Klausur abgeben & Auswerten", use_container_width=True, type="primary"):
@@ -768,38 +769,46 @@ if st.session_state.current_page == "chat":
 # 8.3 Eingabe verarbeiten (Textfeld ODER Button-Klick ODER Kachel)
 prompt = None
 
-if gewaehlter_foliensatz != "Kein Foliensatz gewählt":
-    prompt = st.chat_input(f"Frage zu {gewaehlter_foliensatz} stellen...")
-    
-    # MAGIC UX: Kacheln anzeigen, wenn der Chat noch komplett leer ist
-    if len(st.session_state.messages) == 0:
-        st.markdown("<br><br>", unsafe_allow_html=True)
-        st.markdown("<h3 style='text-align: center; color: gray;'>Womit wollen wir heute starten?</h3>", unsafe_allow_html=True)
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        # 3x2 Raster für die 6 Kacheln
-        col1, col2, col3 = st.columns(3)
-        col4, col5, col6 = st.columns(3)
-        
-        if col1.button("🎯 Quiz starten", use_container_width=True): 
-            prompt = "/quiz Prüfe mein Wissen!"
-        if col2.button("📇 Karteikarten generieren", use_container_width=True): 
-            prompt = "/karten Erstelle mir Karteikarten zum Foliensatz."
-        if col3.button("📝 Lernzettel erstellen", use_container_width=True): 
-            prompt = "/zettel Fasse die wichtigsten Kernkonzepte zusammen."
-        
-        st.write("") # Abstandhalter zwischen den Reihen
-        
-        if col4.button("📊 Erkläre den Break-Even-Point", use_container_width=True): 
-            prompt = "Erkläre mir den Break-Even-Point einfach und mit einem Beispiel bezogen auf das Skript."
-        if col5.button("🤔 Was ist die ABC-Analyse?", use_container_width=True): 
-            prompt = "Was ist die ABC-Analyse und wofür braucht man sie in der BWL?"
-        if col6.button("💡 Klausur-Tipp geben", use_container_width=True): 
-            prompt = "Gib mir eine typische Klausur-Transferaufgabe basierend auf diesem Foliensatz."
-            
+if st.session_state.klausur_modus:
+    st.info(f"Klausur läuft: Frage {st.session_state.klausur_aktuelle_frage} von {st.session_state.klausur_max_fragen}")
+    mc_antwort = st.selectbox("Wähle deine Antwort:", ["Bitte wählen...", "Option A", "Option B", "Option C", "Option D"])
+    if st.button("Antwort einloggen", use_container_width=True, type="primary"):
+        if mc_antwort != "Bitte wählen...":
+            prompt = f"Meine Antwort für Frage {st.session_state.klausur_aktuelle_frage} ist: {mc_antwort}"
+        else:
+            st.warning("Bitte wähle eine Option aus!")
 else:
-    # Eure Sicherheits-Sperre bleibt voll erhalten, wenn kein PDF da ist:
-    prompt = st.chat_input("Wähle zuerst einen Foliensatz aus, um zu chatten...", disabled=True)
+    if gewaehlter_foliensatz != "Kein Skript gefunden":
+        prompt = st.chat_input(f"Frage zu {gewaehlter_foliensatz} stellen...")
+        
+        # MAGIC UX: Kacheln anzeigen, wenn der Chat noch komplett leer ist
+        if len(st.session_state.messages) == 0:
+            st.markdown("<br><br>", unsafe_allow_html=True)
+            st.markdown("<h3 style='text-align: center; color: gray;'>Womit wollen wir heute starten?</h3>", unsafe_allow_html=True)
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            # 3x2 Raster für die 6 Kacheln
+            col1, col2, col3 = st.columns(3)
+            col4, col5, col6 = st.columns(3)
+            
+            if col1.button("🎯 Quiz starten", use_container_width=True): 
+                prompt = "/quiz Prüfe mein Wissen!"
+            if col2.button("📇 Karteikarten generieren", use_container_width=True): 
+                prompt = "/karten Erstelle mir Karteikarten zum Foliensatz."
+            if col3.button("📝 Lernzettel erstellen", use_container_width=True): 
+                prompt = "/zettel Fasse die wichtigsten Kernkonzepte zusammen."
+            
+            st.write("") # Abstandhalter zwischen den Reihen
+            
+            if col4.button("📊 Erkläre den Break-Even-Point", use_container_width=True): 
+                prompt = "Erkläre mir den Break-Even-Point einfach und mit einem Beispiel bezogen auf das Skript."
+            if col5.button("🤔 Was ist die ABC-Analyse?", use_container_width=True): 
+                prompt = "Was ist die ABC-Analyse und wofür braucht man sie in der BWL?"
+            if col6.button("💡 Klausur-Tipp geben", use_container_width=True): 
+                prompt = "Gib mir eine typische Klausur-Transferaufgabe basierend auf diesem Foliensatz."
+                
+    else:
+        prompt = st.chat_input("Wähle zuerst einen Foliensatz aus, um zu chatten...", disabled=True)
 
 # Hier läuft jetzt alles zusammen: Egal ob Tastatur, Popover-Menü oder Start-Kachel!
 user_input = prompt or action
@@ -817,8 +826,7 @@ if user_input or uploaded_image:
     elif user_input.startswith("/klausur_start"):
         parts = user_input.split()
         f_anz = parts[1] if len(parts) > 1 else "3"
-        z_min = parts[2] if len(parts) > 2 else "60"
-        ui_message = f"🎓 Ich bin bereit. Starte eine Klausur mit {f_anz} Fragen. Ich habe {z_min} Minuten Zeit."
+        ui_message = f"🎓 Ich bin bereit. Starte eine Klausur mit {f_anz} Fragen."
     else:
         display_texts = {
             "/quiz": "📝 Ich möchte ein kurzes Quiz starten.",
@@ -847,21 +855,25 @@ if user_input or uploaded_image:
 
     if user_input_lower.startswith("/klausur_start"):
         parts = user_input_lower.split()
-        f_anz = parts[1] if len(parts) > 1 else "3"
-        z_min = parts[2] if len(parts) > 2 else "60"
+        f_anz = int(parts[1]) if len(parts) > 1 else 10
         st.session_state.klausur_modus = True
         st.session_state.active_mode = "klausur"
-        system_override = f"KLAUSUR-MODUS GESTARTET: Stelle insgesamt {f_anz} Prüfungsfragen. Orientierung: Nutze unbedingt den Stil der Altklausuren und kombiniere ihn mit dem aktuellen Foliensatz. Der Nutzer hat simuliert {z_min} Minuten Zeit. WICHTIGSTE REGEL: Bewerte die Antworten im Text NOCH NICHT! Bestätige nur den Eingang der Antwort sachlich und stelle die nächste Frage. Gib erst eine Text-Bewertung ab, wenn der Nutzer die Klausur explizit abgibt."
+        st.session_state.klausur_aktuelle_frage = 1
+        st.session_state.klausur_max_fragen = f_anz
+        system_override = f"KLAUSUR-MODUS GESTARTET: Stelle jetzt exakt Frage {st.session_state.klausur_aktuelle_frage} von {st.session_state.klausur_max_fragen}. Format: Zwingend Multiple-Choice mit 4 klaren Optionen (A, B, C, D). Korrigiere oder bewerte noch nichts!"
 
     elif user_input_lower == "/klausur_ende":
         st.session_state.klausur_modus = False
         st.session_state.active_mode = None
-        system_override = "KLAUSUR-ABGABE: Der Nutzer hat die Klausur beendet. Bewerte nun ALLE in dieser Sitzung gegebenen Antworten schrittweise. Vergib Teilpunkte (z.B. 2/5). Gib am Ende ein ehrliches Gesamtfazit und nenne 1-2 konkrete Schwachstellen oder Foliensätze, die der Nutzer sich vor der echten Prüfung dringend nochmal ansehen muss."
+        st.session_state.klausur_aktuelle_frage = 1
+        system_override = "KLAUSUR-ABGABE: Der Nutzer hat die Klausur beendet. Werte nun chronologisch alle gegebenen Antworten (A, B, C oder D) aus. Nenne die erreichte Gesamtpunktzahl und 1-2 konkrete Schwachstellen, die der Nutzer sich vor der echten Prüfung dringend nochmal ansehen muss."
 
     elif st.session_state.klausur_modus:
-        system_override = "KLAUSUR LÄUFT: Der Nutzer beantwortet gerade eine Klausurfrage. Nimm die Antwort auf, aber KORRIGIERE SIE IM TEXT NOCH NICHT. Verrate keine Lösungen, lobe oder tadle nicht. Stelle einfach direkt die nächste Frage oder weise ihn darauf hin, dass er alle Fragen beantwortet hat und die Klausur über das Menü abgeben soll."
-    elif st.session_state.klausur_modus:
-        system_override = "Der Nutzer bearbeitet gerade eine Klausuraufgabe. Führe ihn schrittweise durch die Aufgabe. Korrigiere fehlerhafte Teilaspekte, bevor du zum nächsten Schritt übergehst."
+        st.session_state.klausur_aktuelle_frage += 1
+        if st.session_state.klausur_aktuelle_frage <= st.session_state.klausur_max_fragen:
+             system_override = f"KLAUSUR LÄUFT: Der Nutzer hat geantwortet. Stelle nun exakt Frage {st.session_state.klausur_aktuelle_frage} von {st.session_state.klausur_max_fragen}. Format: Zwingend Multiple-Choice mit 4 Optionen (A, B, C, D). Keine Auswertung der vorherigen Frage!"
+        else:
+             system_override = "KLAUSUR LÄUFT: Der Nutzer hat die letzte Frage beantwortet. Bitte ihn nun, die Klausur über das Menü ('Klausur abgeben & Auswerten') abzugeben. Stelle keine neuen Fragen mehr und werte noch nichts aus!"
 
     elif user_input_lower.startswith("/zettel"):
         st.session_state.active_mode = None
