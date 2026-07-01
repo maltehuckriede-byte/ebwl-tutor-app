@@ -332,12 +332,17 @@ if "current_page" not in st.session_state: st.session_state.current_page = "logi
 if "username" not in st.session_state: st.session_state.username = ""
 if "messages" not in st.session_state: st.session_state.messages = []
 if "level" not in st.session_state: st.session_state.level = "Solide"
-if "klausur_modus" not in st.session_state: st.session_state.klausur_modus = False
 if "active_mode" not in st.session_state: st.session_state.active_mode = None
-# 🚨 NEU: Der Schlüssel, um den Bilder-Uploader zu leeren
-if "uploader_key" not in st.session_state: st.session_state.uploader_key = 0
+ # Für den Klausurmodus:
+if "klausur_modus" not in st.session_state: st.session_state.klausur_modus = False
 if "klausur_aktuelle_frage" not in st.session_state: st.session_state.klausur_aktuelle_frage = 1
 if "klausur_max_fragen" not in st.session_state: st.session_state.klausur_max_fragen = 10
+ # Für den Quizmodus:
+if "quiz_modus" not in st.session_state: st.session_state.quiz_modus = False
+if "quiz_aktuelle_frage" not in st.session_state: st.session_state.quiz_aktuelle_frage = 1
+if "quiz_max_fragen" not in st.session_state: st.session_state.quiz_max_fragen = 5
+# 🚨 NEU: Der Schlüssel, um den Bilder-Uploader zu leeren
+if "uploader_key" not in st.session_state: st.session_state.uploader_key = 0
 
 # --- 4. DYNAMISCHES SKRIPT VERZEICHNIS ---
 verfuegbare_pdfs = []
@@ -348,7 +353,8 @@ if os.path.exists("studienmaterial"):
         # Zerlegt den String in Text- und Zahlenblöcke und wandelt Zahlen in Integer um
         return [int(text) if text.isdigit() else text.lower() for text in re.split(r'(\d+)', s)]
         
-    roh_pdfs = [f for f in os.listdir("studienmaterial") if f.endswith(".pdf") and f != "Altklausuren.pdf"]
+    # Filtert alle PDFs heraus, die das Wort "altklausur" im Namen enthalten (wasserdicht gegen Tippfehler)
+    roh_pdfs = [f for f in os.listdir("studienmaterial") if f.endswith(".pdf") and "altklausur" not in f.lower()]
     
     # Hier wenden wir unseren neuen Sortier-Schlüssel an
     verfuegbare_pdfs = sorted(roh_pdfs, key=natural_sort_key)
@@ -743,54 +749,80 @@ if st.session_state.current_page == "chat":
 
     with st.popover("➕ Lern-Aktionen & Upload"):
         st.markdown("**Wähle einen Modus:**")
-        if st.button("Quiz starten", use_container_width=True): action = "/quiz"
-        
+        # Quiz Modus:
+        with st.expander("🎯 Quiz-Modus (Mit Sofort-Feedback)"):
+            if not st.session_state.quiz_modus and not st.session_state.klausur_modus:
+                q_fragen = st.slider("Anzahl der Quiz-Fragen:", 3, 20, 5)
+                if st.button("Quiz starten", use_container_width=True):
+                    action = f"/quiz_start {q_fragen}"
+            elif st.session_state.quiz_modus:
+                st.info("Quiz läuft gerade!")
+                if st.button("Quiz vorzeitig beenden", use_container_width=True):
+                    action = "/quiz_ende"
+        # Karteikarten:
         st.markdown("---")
         karten_anzahl = st.slider("Anzahl Karteikarten:", min_value=2, max_value=8, value=3)
         if st.button(f"Karteikarten generieren ({karten_anzahl})", use_container_width=True): 
             action = f"/karten {karten_anzahl}"
         st.markdown("---")
-        
+        # Bild-Uplopad (für Skizzen, Diagramme, etc.):
         uploaded_image = st.file_uploader("Bild / Skizze hochladen:", type=["png", "jpg", "jpeg"], key=st.session_state.uploader_key)
-        
+        # Klausurmodus:
         st.markdown("---")
         if st.button("Lernzettel erstellen", use_container_width=True): action = "/zettel"
-        with st.expander("🎓 Klausur-Simulator"):
-            if not st.session_state.klausur_modus:
-                k_fragen = st.slider("Anzahl der Fragen:", 5, 35, 10)
-                if st.button("Klausur starten", use_container_width=True, type="primary"):
+        with st.expander("🎓 Klausur-Simulator (Nur Altklausuren)"):
+            if not st.session_state.klausur_modus and not st.session_state.quiz_modus:
+                k_fragen = st.slider("Anzahl der Klausur-Fragen:", 5, 20, 10)
+                if st.button("Altklausur starten", use_container_width=True, type="primary"):
                     action = f"/klausur_start {k_fragen}"
-            else:
-                st.info("Klausur läuft gerade im Hintergrund!")
-                if st.button("Klausur abgeben & Auswerten", use_container_width=True, type="primary"):
+            elif st.session_state.klausur_modus:
+                st.info("Klausur läuft im Hintergrund!")
+                if st.button("Klausur vorzeitig abgeben", use_container_width=True):
                     action = "/klausur_ende"
+        # Sokratischer Modus:
         if st.button("Sokratischer Modus", use_container_width=True): action = "/sokratisch"
 
 # 8.3 Eingabe verarbeiten (Textfeld ODER Button-Klick ODER Kachel)
 prompt = None
 
+# Klausurmodus (Multiple Choice, Altklausur):
 if st.session_state.klausur_modus:
-    # A) Solange wir noch NICHT bei der letzten Frage sind
-    if st.session_state.klausur_aktuelle_frage < st.session_state.klausur_max_fragen:
-        st.info(f"🎓 Klausur läuft: Frage {st.session_state.klausur_aktuelle_frage} von {st.session_state.klausur_max_fragen}")
-        mc_antwort = st.selectbox("Wähle deine Antwort:", ["Bitte wählen...", "A", "B", "C", "D"])
-        if st.button("Antwort einloggen", use_container_width=True, type="primary"):
-            if mc_antwort != "Bitte wählen...":
-                prompt = f"Meine Antwort für Frage {st.session_state.klausur_aktuelle_frage} ist: {mc_antwort}"
+    if st.session_state.klausur_aktuelle_frage <= st.session_state.klausur_max_fragen:
+        st.info(f"🎓 Klausur läuft: Frage {st.session_state.klausur_aktuelle_frage} von {st.session_state.klausur_max_fragen} (Original Altklausur)")
+        
+        # MASSIVES UPGRADE: Multiselect, weil in der Altklausur oft mehrere Antworten richtig sind!
+        mc_antwort = st.multiselect("Wähle deine Antwort(en):", ["A", "B", "C", "D"])
+        
+        button_label = "Antwort einloggen" if st.session_state.klausur_aktuelle_frage < st.session_state.klausur_max_fragen else "Antwort einloggen & Klausur auswerten"
+        
+        if st.button(button_label, use_container_width=True, type="primary"):
+            if mc_antwort: # Prüft, ob die Liste nicht leer ist
+                antwort_string = ", ".join(mc_antwort) # Macht aus ["A", "C"] den Text "A, C"
+                if st.session_state.klausur_aktuelle_frage < st.session_state.klausur_max_fragen:
+                    prompt = f"Meine Antwort für Frage {st.session_state.klausur_aktuelle_frage} ist: {antwort_string}"
+                else:
+                    prompt = f"Meine Antwort für Frage {st.session_state.klausur_aktuelle_frage} ist: {antwort_string}. /letzte_frage_auswerten"
             else:
-                st.warning("Bitte wähle eine Option aus!")
-    
-    # B) Wenn wir bei der LETZTEN Frage sind
-    elif st.session_state.klausur_aktuelle_frage == st.session_state.klausur_max_fragen:
-        st.info(f"🎓 Letzte Frage: {st.session_state.klausur_aktuelle_frage} von {st.session_state.klausur_max_fragen}")
-        mc_antwort = st.selectbox("Wähle deine letzte Antwort:", ["Bitte wählen...", "A", "B", "C", "D"])
-        # Der Button heißt jetzt direkt Auswerten und triggert einen versteckten Befehl
-        if st.button("Antwort einloggen & Klausur auswerten", use_container_width=True, type="primary"):
+                st.warning("Bitte wähle mindestens eine Option aus!")
+
+# Quizmodus (Multiple Choice, Sofort-Feedback)
+elif st.session_state.quiz_modus:
+    if st.session_state.quiz_aktuelle_frage <= st.session_state.quiz_max_fragen:
+        st.info(f"🎯 Quiz läuft: Frage {st.session_state.quiz_aktuelle_frage} von {st.session_state.quiz_max_fragen}")
+        mc_antwort = st.selectbox("Wähle deine Antwort:", ["Bitte wählen...", "A", "B", "C", "D"])
+        
+        button_label = "Antwort einloggen & Auswertung zeigen" if st.session_state.quiz_aktuelle_frage < st.session_state.quiz_max_fragen else "Antwort einloggen & Quiz beenden"
+
+        if st.button(button_label, use_container_width=True):
             if mc_antwort != "Bitte wählen...":
-                prompt = f"Meine Antwort für Frage {st.session_state.klausur_aktuelle_frage} ist: {mc_antwort}. /letzte_frage_auswerten"
+                if st.session_state.quiz_aktuelle_frage < st.session_state.quiz_max_fragen:
+                    prompt = f"Meine Antwort für Frage {st.session_state.quiz_aktuelle_frage} ist: {mc_antwort}. /quiz_naechste_frage"
+                else:
+                    prompt = f"Meine Antwort für Frage {st.session_state.quiz_aktuelle_frage} ist: {mc_antwort}. /quiz_ende"
             else:
                 st.warning("Bitte wähle eine Option aus!")
 
+# Normaler Chatmodus (kein Quiz, keine Klausur):
 else:
     if gewaehlter_foliensatz != "Kein Skript gefunden":
         prompt = st.chat_input(f"Frage zu {gewaehlter_foliensatz} stellen...")
@@ -867,7 +899,36 @@ if user_input or uploaded_image:
     system_override = ""
     user_input_lower = user_input.strip().lower()
 
-    if user_input_lower.startswith("/klausur_start"):
+    # --- 🎯 QUIZ-MODUS ---
+    if user_input_lower.startswith("/quiz_start"):
+        parts = user_input_lower.split()
+        q_anz = int(parts[1]) if len(parts) > 1 else 5
+        st.session_state.quiz_modus = True
+        st.session_state.active_mode = "quiz"
+        st.session_state.quiz_aktuelle_frage = 1
+        st.session_state.quiz_max_fragen = q_anz
+        system_override = (
+            f"QUIZ-MODUS GESTARTET: Stelle exakt Frage 1 von {q_anz}. Nutze Multiple-Choice (A,B,C,D). "
+            "Gib NOCH KEINE Lösung vor, sondern warte auf die Antwort des Nutzers."
+        )
+
+    elif "/quiz_naechste_frage" in user_input_lower:
+        st.session_state.quiz_aktuelle_frage += 1
+        system_override = (
+            f"QUIZ LÄUFT: Der Nutzer hat geantwortet. "
+            f"SCHRITT 1: Werte die vorherige Antwort kurz und knackig (Richtig/Falsch) mit einer 1-Satz-Erklärung aus.\n"
+            f"SCHRITT 2: Stelle direkt im Anschluss darunter exakt Frage {st.session_state.quiz_aktuelle_frage} von {st.session_state.quiz_max_fragen} als Multiple Choice."
+        )
+
+    elif "/quiz_ende" in user_input_lower or user_input_lower == "/quiz_ende":
+        st.session_state.quiz_modus = False
+        st.session_state.active_mode = None
+        st.session_state.quiz_aktuelle_frage = 1
+        system_override = "QUIZ BEENDET: Werte die letzte Antwort aus und gib dem Nutzer eine kurze, motivierende Zusammenfassung."
+
+
+    # --- 🎓 KLAUSUR-MODUS (NUR ALTKLAUSUREN) ---
+    elif user_input_lower.startswith("/klausur_start"):
         parts = user_input_lower.split()
         f_anz = int(parts[1]) if len(parts) > 1 else 10
         st.session_state.klausur_modus = True
@@ -875,29 +936,26 @@ if user_input or uploaded_image:
         st.session_state.klausur_aktuelle_frage = 1
         st.session_state.klausur_max_fragen = f_anz
         system_override = (
-            f"KLAUSUR-MODUS GESTARTET: Stelle jetzt exakt Frage {st.session_state.klausur_aktuelle_frage} von {st.session_state.klausur_max_fragen}. "
-            "FORMAT-REGEL (Zwingend!):\n"
-            "Stelle die Frage und liste die 4 Antwortoptionen zwingend mit Spiegelstrichen exakt so auf:\n\n"
+            f"KLAUSUR-MODUS GESTARTET. Du bist eine Prüfungssoftware. "
+            f"BEFEHL: Verwende ZWINGEND AUSSCHLIESSLICH originale Fragen aus dem Dokument 'Altklausur.pdf'. Mische die Reihenfolge zufällig!\n"
+            f"Generiere SOFORT und OHNE Begrüßung Frage {st.session_state.klausur_aktuelle_frage} von {st.session_state.klausur_max_fragen}.\n"
+            "FORMAT-REGEL:\n"
+            "Stelle die Frage exakt so, wie sie in der Altklausur steht und liste die 4 Antwortoptionen zwingend mit Spiegelstrichen auf:\n"
             "- A) [Option 1]\n"
             "- B) [Option 2]\n"
             "- C) [Option 3]\n"
-            "- D) [Option 4]\n\n"
-            "Gib unter keinen Umständen schon Lösungen oder Tipps vor!"
+            "- D) [Option 4]\n"
         )
 
-    # Hier fangen wir ab, ob es der manuelle Abbruch oder die letzte Frage war
     elif "/letzte_frage_auswerten" in user_input_lower or user_input_lower == "/klausur_ende":
-        max_f = st.session_state.klausur_max_fragen # Wir merken uns die Anzahl für den Prompt
-        
+        max_f = st.session_state.klausur_max_fragen
         st.session_state.klausur_modus = False
         st.session_state.active_mode = None
         st.session_state.klausur_aktuelle_frage = 1
         system_override = (
-            f"KLAUSUR-ABGABE: Der Nutzer hat die letzte Antwort eingeloggt. "
-            f"Werte nun zwingend ALLE {max_f} gestellten Fragen einzeln und chronologisch aus! "
-            "WICHTIGE REGEL GEGEN KI-FAULHEIT: Gehe in deinem Gedächtnis GANZ an den Anfang des aktuellen Chatverlaufs zurück! "
-            f"Du DARFST Frage 1 unter keinen Umständen überspringen. Beginne deine Antwort zwingend mit 'Frage 1:' und arbeite dich bis exakt Frage {max_f} durch. "
-            "Nenne am Ende gut sichtbar die erreichte Gesamtpunktzahl und 1-2 konkrete Schwachstellen, die der Nutzer sich nochmal ansehen muss."
+            f"KLAUSUR-ABGABE: Werte nun zwingend ALLE {max_f} gestellten Fragen aus der Altklausur einzeln und chronologisch aus! "
+            "REGEL GEGEN KI-FAULHEIT: Gehe in deinem Gedächtnis GANZ an den Anfang des aktuellen Chatverlaufs zurück! "
+            f"Beginne zwingend mit 'Frage 1:' und arbeite dich bis exakt Frage {max_f} durch. Lass keine aus! Nenne am Ende die erreichte Gesamtpunktzahl und 1-2 Schwachstellen."
         )
 
     elif st.session_state.klausur_modus:
@@ -905,9 +963,9 @@ if user_input or uploaded_image:
         if st.session_state.klausur_aktuelle_frage <= st.session_state.klausur_max_fragen:
              system_override = (
                  f"KLAUSUR LÄUFT: Stelle exakt Frage {st.session_state.klausur_aktuelle_frage} von {st.session_state.klausur_max_fragen}. "
-                 "REGEL 1: STRENGSTES VERBOT: Gib absolut KEIN Feedback zur vorherigen Antwort. Sag weder 'Richtig', 'Falsch' noch 'Gute Wahl'. Du bist eine stumme Prüfungssoftware.\n"
-                 "REGEL 2: FORMAT-REGEL (Zwingend!):\n"
-                 "Stelle die Frage und liste die 4 Antwortoptionen zwingend mit Spiegelstrichen exakt so auf:\n\n"
+                 "REGEL 1: Nutze AUSSCHLIESSLICH originalgetreue Fragen aus 'Altklausur.pdf' in zufälliger Reihenfolge.\n"
+                 "REGEL 2: STRENGSTES VERBOT: Gib absolut KEIN Feedback zur vorherigen Antwort. Du bist eine stumme Prüfungssoftware.\n"
+                 "REGEL 3: FORMAT-REGEL:\n"
                  "- A) [Option 1]\n"
                  "- B) [Option 2]\n"
                  "- C) [Option 3]\n"
@@ -927,20 +985,6 @@ if user_input or uploaded_image:
     elif user_input_lower.startswith("/sokratisch"):
         st.session_state.active_mode = None
         system_override = "SOKRATISCHER MODUS: Gib KEINE direkten Antworten. Reagiere auf Wissensfragen mit einer Gegenfrage. Hinterfrage falsche Annahmen des Nutzers. Gib erst nach 3 Fehlversuchen eine geführte Erklärung ab."
-
-    elif user_input_lower.startswith("/quiz"):
-        st.session_state.active_mode = "quiz"
-        system_override = (
-            "QUIZ-MODUS: Stelle genau eine Frage (Offen oder MC) passend zum aktuellen Skript. "
-            "\n\nWICHTIGE FORMATIERUNG FÜR MC-FRAGEN: Verwende ZWINGEND eine Aufzählung mit Spiegelstrichen! "
-            "Halte dich exakt an dieses Template:\n\n"
-            "[Deine Frage]\n\n"
-            "- **A)** [Option 1]\n"
-            "- **B)** [Option 2]\n"
-            "- **C)** [Option 3]\n"
-            "- **D)** [Option 4]\n\n"
-            "Schreibe die Optionen unter keinen Umständen als zusammenhängenden Fließtext in eine einzige Zeile."
-        )
 
     # 🚨 NEU: Das heimliche Tracking-System für Nutzer-Antworten!
     if not user_input_lower.startswith("/") and st.session_state.active_mode in ["quiz", "klausur"]:
