@@ -770,13 +770,18 @@ if st.session_state.current_page == "chat":
 prompt = None
 
 if st.session_state.klausur_modus:
-    st.info(f"Klausur läuft: Frage {st.session_state.klausur_aktuelle_frage} von {st.session_state.klausur_max_fragen}")
-    mc_antwort = st.selectbox("Wähle deine Antwort:", ["Bitte wählen...", "Option A", "Option B", "Option C", "Option D"])
-    if st.button("Antwort einloggen", use_container_width=True, type="primary"):
-        if mc_antwort != "Bitte wählen...":
-            prompt = f"Meine Antwort für Frage {st.session_state.klausur_aktuelle_frage} ist: {mc_antwort}"
-        else:
-            st.warning("Bitte wähle eine Option aus!")
+    if st.session_state.klausur_aktuelle_frage <= st.session_state.klausur_max_fragen:
+        st.info(f"🎓 Klausur läuft: Frage {st.session_state.klausur_aktuelle_frage} von {st.session_state.klausur_max_fragen}")
+        mc_antwort = st.selectbox("Wähle deine Antwort:", ["Bitte wählen...", "A", "B", "C", "D"])
+        if st.button("Antwort einloggen", use_container_width=True, type="primary"):
+            if mc_antwort != "Bitte wählen...":
+                prompt = f"Meine Antwort für Frage {st.session_state.klausur_aktuelle_frage} ist: {mc_antwort}"
+            else:
+                st.warning("Bitte wähle eine Option aus!")
+    else:
+        st.success("🎉 Du hast alle Fragen beantwortet!")
+        if st.button("Klausur auswerten", use_container_width=True, type="primary"):
+            prompt = "/klausur_ende"
 else:
     if gewaehlter_foliensatz != "Kein Skript gefunden":
         prompt = st.chat_input(f"Frage zu {gewaehlter_foliensatz} stellen...")
@@ -860,21 +865,29 @@ if user_input or uploaded_image:
         st.session_state.active_mode = "klausur"
         st.session_state.klausur_aktuelle_frage = 1
         st.session_state.klausur_max_fragen = f_anz
-        system_override = f"KLAUSUR-MODUS GESTARTET: Stelle jetzt exakt Frage {st.session_state.klausur_aktuelle_frage} von {st.session_state.klausur_max_fragen}. Format: Zwingend Multiple-Choice mit 4 klaren Optionen (A, B, C, D). Korrigiere oder bewerte noch nichts!"
+        system_override = (
+            f"KLAUSUR-MODUS GESTARTET: Stelle jetzt exakt Frage {st.session_state.klausur_aktuelle_frage} von {st.session_state.klausur_max_fragen}. "
+            "WICHTIG: Liste die 4 Antwortoptionen (A, B, C, D) zwingend untereinander mit Zeilenumbruch auf! "
+            "Gib unter keinen Umständen schon Lösungen oder Tipps vor."
+        )
 
     elif user_input_lower == "/klausur_ende":
         st.session_state.klausur_modus = False
         st.session_state.active_mode = None
         st.session_state.klausur_aktuelle_frage = 1
-        system_override = "KLAUSUR-ABGABE: Der Nutzer hat die Klausur beendet. Werte nun chronologisch alle gegebenen Antworten (A, B, C oder D) aus. Nenne die erreichte Gesamtpunktzahl und 1-2 konkrete Schwachstellen, die der Nutzer sich vor der echten Prüfung dringend nochmal ansehen muss."
+        system_override = "KLAUSUR-ABGABE: Der Nutzer hat die Klausur beendet. Werte nun chronologisch alle gegebenen Antworten aus. Nenne die erreichte Gesamtpunktzahl und 1-2 konkrete Schwachstellen, die der Nutzer sich vor der echten Prüfung dringend nochmal ansehen muss."
 
     elif st.session_state.klausur_modus:
         st.session_state.klausur_aktuelle_frage += 1
         if st.session_state.klausur_aktuelle_frage <= st.session_state.klausur_max_fragen:
-             system_override = f"KLAUSUR LÄUFT: Der Nutzer hat geantwortet. Stelle nun exakt Frage {st.session_state.klausur_aktuelle_frage} von {st.session_state.klausur_max_fragen}. Format: Zwingend Multiple-Choice mit 4 Optionen (A, B, C, D). Keine Auswertung der vorherigen Frage!"
+             system_override = (
+                 f"KLAUSUR LÄUFT: Stelle exakt Frage {st.session_state.klausur_aktuelle_frage} von {st.session_state.klausur_max_fragen}. "
+                 "REGEL 1: Liste die 4 Antwortoptionen (A, B, C, D) zwingend untereinander auf!\n"
+                 "REGEL 2: STRENGSTES VERBOT: Gib absolut KEIN Feedback zur vorherigen Antwort. Sag weder 'Richtig' noch 'Falsch'. Kommentiere die Antwort nicht. Beginne sofort mit der neuen Frage."
+             )
         else:
-             system_override = "KLAUSUR LÄUFT: Der Nutzer hat die letzte Frage beantwortet. Bitte ihn nun, die Klausur über das Menü ('Klausur abgeben & Auswerten') abzugeben. Stelle keine neuen Fragen mehr und werte noch nichts aus!"
-
+             system_override = "KLAUSUR BEENDET: Bestätige nur kurz, dass alle Fragen beantwortet wurden. Werte noch NICHTS aus! Sag dem Nutzer, er soll den Button 'Klausur auswerten' klicken."
+             
     elif user_input_lower.startswith("/zettel"):
         st.session_state.active_mode = None
         system_override = "Erstelle ein extrem kompaktes Cheatsheet zum Thema (Behandelte Themen in 2-4 Bullets, wichtige Formeln mit Variablen, identifizierte Schwächen falls zutreffend)."
