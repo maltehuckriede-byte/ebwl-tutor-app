@@ -895,7 +895,8 @@ if user_input or uploaded_image:
         system_override = (
             f"KLAUSUR-ABGABE: Der Nutzer hat die letzte Antwort eingeloggt. "
             f"Werte nun zwingend ALLE {max_f} gestellten Fragen einzeln und chronologisch aus! "
-            f"STRUKTUR-REGEL: Du musst für jede einzelne Frage ein kurzes Feedback geben (Frage 1, Frage 2 ... bis exakt Frage {max_f}). Lass keine Frage aus! "
+            "WICHTIGE REGEL GEGEN KI-FAULHEIT: Gehe in deinem Gedächtnis GANZ an den Anfang des aktuellen Chatverlaufs zurück! "
+            f"Du DARFST Frage 1 unter keinen Umständen überspringen. Beginne deine Antwort zwingend mit 'Frage 1:' und arbeite dich bis exakt Frage {max_f} durch. "
             "Nenne am Ende gut sichtbar die erreichte Gesamtpunktzahl und 1-2 konkrete Schwachstellen, die der Nutzer sich nochmal ansehen muss."
         )
 
