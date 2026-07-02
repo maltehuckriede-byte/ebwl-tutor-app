@@ -132,12 +132,14 @@ def display_html_flashcards(ai_text):
 def clean_klausur_text(text):
     if not isinstance(text, str): return text
     
-    # Entfernt die störenden Tags wie
-    # Wir verdoppeln die Backslashes für den Regex, dann ist VS Code glücklich
-    text = re.sub("\\", "", text)
+    # Entfernt - wir suchen nach dem Muster ohne mit Backslashes am Ende zu kämpfen
+    # Wir benutzen das Zeichen '[' und ']' direkt, müssen aber die eckigen Klammern 
+    # für RegEx korrekt maskieren. 
+    # -> Das \d+ steht für Zahlen.
+    text = re.sub(r"\]*\]", "", text)
     
-    # Entfernt HTML-Tags
-    text = re.sub("<[^>]+>", "", text)
+    # Entfernt HTML-Tags wie <p>, <span> etc.
+    text = re.sub(r"<[^>]+>", "", text)
     
     return text.strip()
         
