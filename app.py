@@ -125,6 +125,21 @@ def display_html_flashcards(ai_text):
         <div class="container">{cards_html}</div>
         """
         st.html(f'<div style="min-height: 300px;">{full_html}</div>')
+
+# ==========================================
+# 🃏 HELPER FÜR KLAUSURMODUS
+# ==========================================
+def clean_klausur_text(text):
+    if not isinstance(text, str): return text
+    
+    # Entfernt die störenden Tags wie
+    # Wir verdoppeln die Backslashes für den Regex, dann ist VS Code glücklich
+    text = re.sub("\\", "", text)
+    
+    # Entfernt HTML-Tags
+    text = re.sub("<[^>]+>", "", text)
+    
+    return text.strip()
         
 # ==========================================
 # 🎨 PREMIUM HTML/CSS DASHBOARD GENERATOR (OBSIDIAN THEME)
@@ -710,6 +725,8 @@ if st.session_state.current_page == "chat":
     st.markdown("---")
 
 # 8.1 Chat-Verlauf rendern
+# Chat-Verlauf während einer echten Klausur ausblenden, um RAG-Verwirrung zu vermeiden!
+if not st.session_state.klausur_modus:
     for i, message in enumerate(st.session_state.messages):
         avatar_icon = "👤" if message["role"] == "user" else "🎓"
             
@@ -775,7 +792,7 @@ if st.session_state.current_page == "chat":
         # Klausurmodus:
         with st.expander("🎓 Klausur-Simulator (Nur Altklausuren)"):
             if not st.session_state.klausur_modus and not st.session_state.quiz_modus:
-                k_fragen = st.slider("Anzahl der Klausur-Fragen:", 1, 20, 10)
+                k_fragen = st.slider("Anzahl der Klausur-Fragen:", 3, 32, 10)
                 if st.button("Altklausur starten", use_container_width=True, type="primary"):
                     try:
                         # 🚨 NEU: JSON laden, mischen und vorbereiten
@@ -803,25 +820,28 @@ if st.session_state.klausur_modus:
     
     if aktuelle_idx < st.session_state.klausur_max_fragen:
         aktuelle_frage_daten = st.session_state.klausur_fragen_pool[aktuelle_idx]
-        frage_typ = aktuelle_frage_daten.get("typ", "multiple_choice") # Standard ist MC, falls es mal fehlt
+        frage_typ = aktuelle_frage_daten.get("typ", "multiple_choice")
         
         st.info(f"🎓 Klausur läuft: Frage {st.session_state.klausur_aktuelle_frage} von {st.session_state.klausur_max_fragen} (Original Altklausur)")
-        st.markdown(f"#### {aktuelle_frage_daten['frage']}")
         
-        # --- DYNAMISCHER UI AUFBAU ---
+        # 🎯 HIER WIRD DIE FRAGE BEREINIGT ANGEZEIGT
+        st.markdown(f"#### {clean_klausur_text(aktuelle_frage_daten['frage'])}")
+        
         mc_antwort = None
         zuordnung_antwort = {}
         
         if frage_typ == "multiple_choice":
-            mc_antwort = st.multiselect("Wähle deine Antwort(en):", aktuelle_frage_daten['optionen'])
+            # 🎯 HIER WERDEN DIE OPTIONEN BEREINIGT
+            bereinigte_optionen = [clean_klausur_text(opt) for opt in aktuelle_frage_daten['optionen']]
+            mc_antwort = st.multiselect("Wähle deine Antwort(en):", bereinigte_optionen)
         
         elif frage_typ == "zuordnung":
             st.write("Wähle für jeden Begriff die passende Option aus dem Dropdown:")
-            # Erstellt für jeden Begriff auf der linken Seite ein Dropdown-Menü
+            bereinigte_optionen = [clean_klausur_text(opt) for opt in aktuelle_frage_daten['optionen']]
             for begriff in aktuelle_frage_daten['zuordnungen'].keys():
-                zuordnung_antwort[begriff] = st.selectbox(
-                    f"{begriff}:", 
-                    ["Bitte wählen..."] + aktuelle_frage_daten['optionen'], 
+                zuordnung_antwort[clean_klausur_text(begriff)] = st.selectbox(
+                    f"{clean_klausur_text(begriff)}:", 
+                    ["Bitte wählen..."] + bereinigte_optionen, 
                     key=f"dd_{aktuelle_idx}_{begriff}"
                 )
         
@@ -830,7 +850,6 @@ if st.session_state.klausur_modus:
         col1, col2 = st.columns(2)
         with col1:
             if st.button(button_label, use_container_width=True, type="primary"):
-                # --- DYNAMISCHE VALIDIERUNG ---
                 is_valid = False
                 user_answer_data = None
                 korrekte_antwort_data = None
@@ -838,19 +857,17 @@ if st.session_state.klausur_modus:
                 if frage_typ == "multiple_choice" and mc_antwort:
                     is_valid = True
                     user_answer_data = mc_antwort
-                    korrekte_antwort_data = aktuelle_frage_daten['korrekte_antworten']
+                    korrekte_antwort_data = [clean_klausur_text(opt) for opt in aktuelle_frage_daten['korrekte_antworten']]
                     
                 elif frage_typ == "zuordnung":
-                    # Prüft, ob ALLE Dropdowns ausgefüllt wurden
                     if all(v != "Bitte wählen..." for v in zuordnung_antwort.values()):
                         is_valid = True
                         user_answer_data = zuordnung_antwort
-                        korrekte_antwort_data = aktuelle_frage_daten['zuordnungen']
+                        korrekte_antwort_data = {clean_klausur_text(k): clean_klausur_text(v) for k, v in aktuelle_frage_daten['zuordnungen'].items()}
                 
-                # --- SPEICHERN & WEITER ---
                 if is_valid:
                     st.session_state.klausur_user_antworten.append({
-                        "frage": aktuelle_frage_daten['frage'],
+                        "frage": clean_klausur_text(aktuelle_frage_daten['frage']),
                         "typ": frage_typ,
                         "user": user_answer_data,
                         "korrekt": korrekte_antwort_data
@@ -1032,7 +1049,7 @@ if user_input or uploaded_image:
                     status = "❌ FALSCH (Teilweise oder ganz inkorrekt)"
                     
             auswertungs_text += f"Frage {i+1}: {data['frage']}\nTyp: {f_typ}\nNutzer wählte: {data['user']}\nKorrekte Lösung: {data['korrekt']}\nStatus: {status}\n\n"
-            
+
         system_override = (
             f"KLAUSUR BEENDET. Der Nutzer hat {punkte} von {max_punkte} bearbeiteten Fragen komplett richtig beantwortet.\n"
             f"Hier sind die harten Fakten aus dem System:\n{auswertungs_text}\n"
