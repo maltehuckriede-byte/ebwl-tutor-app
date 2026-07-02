@@ -944,10 +944,18 @@ else:
 # Hier läuft jetzt alles zusammen: Egal ob Tastatur, Popover-Menü oder Start-Kachel!
 user_input = prompt or action
 
+# 🚨 SICHERHEITS-FIX: Variable definieren, bevor wir sie benutzen
+if 'uploaded_image' not in locals():
+    uploaded_image = None
+
 if user_input or uploaded_image:
 
     # Fallback, falls nur ein Bild aber kein Text kommt
-    if uploaded_image and not user_input:
+    # Wir prüfen jetzt explizit auf 'is not None'
+    if uploaded_image is not None and not user_input:
+        user_input = "Bitte analysiere meine hochgeladene Lösung/Skizze anhand der aktuellen Referenz."
+    
+    # ... hier geht dein Code weiter wie gehabt ...
         user_input = "Bitte analysiere meine hochgeladene Lösung/Skizze anhand der aktuellen Referenz."
     # 1. Übersetzung für das UI (Damit der User nicht "/quiz" als eigene Nachricht sieht)
     # 🚨 NEU: Dynamische Anzeige für den Chatverlauf
