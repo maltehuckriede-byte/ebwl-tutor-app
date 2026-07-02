@@ -942,37 +942,30 @@ else:
         prompt = st.chat_input("Wähle zuerst einen Foliensatz aus, um zu chatten...", disabled=True)
 
 # Hier läuft jetzt alles zusammen: Egal ob Tastatur, Popover-Menü oder Start-Kachel!
-# 🚨 FIX: prompt und action sicherstellen, damit der NameError verschwindet
-prompt = prompt if 'prompt' in locals() else None
-action = action if 'action' in locals() else None
-
 user_input = prompt or action
 
-# 🚨 SICHERHEITS-FIX: Variable definieren
-if 'uploaded_image' not in locals():
-    uploaded_image = None
-
 if user_input or uploaded_image:
+
     # Fallback, falls nur ein Bild aber kein Text kommt
-    if uploaded_image is not None and not user_input:
+    if uploaded_image and not user_input:
         user_input = "Bitte analysiere meine hochgeladene Lösung/Skizze anhand der aktuellen Referenz."
     # 1. Übersetzung für das UI (Damit der User nicht "/quiz" als eigene Nachricht sieht)
-# 🚨 NEU: Dynamische Anzeige für den Chatverlauf
-if user_input.startswith("/karten"):
-    anzahl = user_input.split()[1] if len(user_input.split()) > 1 else "3"
-    ui_message = f"🃏 Erstelle mir bitte {anzahl} Karteikarten zum aktuellen Thema."
-elif user_input.startswith("/klausur_start"):
-    parts = user_input.split()
-    f_anz = parts[1] if len(parts) > 1 else "3"
-    ui_message = f"🎓 Ich bin bereit. Starte eine Klausur mit {f_anz} Fragen."
-else:
-    display_texts = {
-        "/quiz": "📝 Ich möchte ein kurzes Quiz starten.",
-        "/zettel": "📄 Fasse das aktuelle Thema als kompakten Lernzettel zusammen.",
-        "/klausur_ende": "🛑 Ich gebe meine Klausur ab. Bitte werte alle meine Antworten jetzt schonungslos aus.",
-        "/sokratisch": "🤔 Aktiviere den sokratischen Modus für mich."
-    }
-    ui_message = display_texts.get(user_input, user_input)
+    # 🚨 NEU: Dynamische Anzeige für den Chatverlauf
+    if user_input.startswith("/karten"):
+        anzahl = user_input.split()[1] if len(user_input.split()) > 1 else "3"
+        ui_message = f"🃏 Erstelle mir bitte {anzahl} Karteikarten zum aktuellen Thema."
+    elif user_input.startswith("/klausur_start"):
+        parts = user_input.split()
+        f_anz = parts[1] if len(parts) > 1 else "3"
+        ui_message = f"🎓 Ich bin bereit. Starte eine Klausur mit {f_anz} Fragen."
+    else:
+        display_texts = {
+            "/quiz": "📝 Ich möchte ein kurzes Quiz starten.",
+            "/zettel": "📄 Fasse das aktuelle Thema als kompakten Lernzettel zusammen.",
+            "/klausur_ende": "🛑 Ich gebe meine Klausur ab. Bitte werte alle meine Antworten jetzt schonungslos aus.",
+            "/sokratisch": "🤔 Aktiviere den sokratischen Modus für mich."
+        }
+        ui_message = display_texts.get(user_input, user_input)
     
     # Visueller Indikator für den User, dass ein Bild angehängt wurde
     if uploaded_image:
