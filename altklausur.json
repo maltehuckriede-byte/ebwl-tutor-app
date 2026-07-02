@@ -1,0 +1,447 @@
+[
+  {
+    "typ": "multiple_choice",
+    "frage": "Im Marketing werden Kunden häufig nach Verbrauch und Verhalten segmentiert. Der in der Vorlesung genutzte Oberbegriff 'Allgemeine Verbraucherattribute' schließt welche Antwortmöglichkeit nicht ein?",
+    "optionen": [
+      "Psychografische Segmentierung",
+      "Geografische Segmentierung",
+      "Segmentierung nach Nutzen",
+      "Segmentierung nach Demographie"
+    ],
+    "korrekte_antworten": [
+      "Segmentierung nach Nutzen"
+    ]
+  },
+  {
+    "typ": "multiple_choice",
+    "frage": "Welche Art von Markt liegt vor, wenn Unternehmen Engpässe in der Beschaffung und/oder Produktion managen müssen und die Nachfrage größer als das Angebot ist?",
+    "optionen": [
+      "Polypol",
+      "Käufermarkt",
+      "Monopol",
+      "Verkäufermarkt"
+    ],
+    "korrekte_antworten": [
+      "Verkäufermarkt"
+    ]
+  },
+  {
+    "typ": "multiple_choice",
+    "frage": "Bitte wählen Sie alle Antwortmöglichkeiten aus, die laut Vorlesung auf 'bahnbrechende Innovationen' zutreffen.",
+    "optionen": [
+      "Bei der 'bahnbrechenden Innovation' geht es um die Entdeckung neuer Phänomene und Probleme",
+      "Die meisten Innovationen sind 'bahnbrechend'",
+      "Das Problem ist gut definiert, das Gebiet jedoch nicht",
+      "Der Dyson Staubsauger ist ein Beispiel für eine bahnbrechende Innovation"
+    ],
+    "korrekte_antworten": [
+      "Das Problem ist gut definiert, das Gebiet jedoch nicht",
+      "Der Dyson Staubsauger ist ein Beispiel für eine bahnbrechende Innovation"
+    ]
+  },
+  {
+    "typ": "multiple_choice",
+    "frage": "Die BWL lässt sich in die Systematik der Wissenschaften einordnen. Zu welcher Oberkategorie gehört sie?",
+    "optionen": [
+      "Naturwissenschaften",
+      "Sozialwissenschaften",
+      "Ingenieurwissenschaften",
+      "Volkswissenschaften"
+    ],
+    "korrekte_antworten": [
+      "Sozialwissenschaften"
+    ]
+  },
+  {
+    "typ": "zuordnung",
+    "frage": "Management und Leadership werden oftmals verwechselt. Ordnen Sie die folgenden Aussagen der passenden Führungsform zu.",
+    "optionen": [
+      "Management",
+      "Leadership"
+    ],
+    "zuordnungen": {
+      "Die Energie im Team treibt alles voran, was erreicht werden soll.": "Leadership",
+      "Die Führungskraft und ihre Teammitglieder lernen voneinander.": "Leadership",
+      "Fokus auf Befehl und Kontrolle, keine Selbstreflexion erforderlich.": "Management",
+      "Offenes Ansprechen von Kritikpunkten.": "Leadership",
+      "Fokus auf Aufrechterhalten von Autorität im Team.": "Management"
+    }
+  },
+  {
+    "typ": "zuordnung",
+    "frage": "Entrepreneure unterscheiden sich in ihrem Denken und Handeln von Großunternehmern. Ordnen Sie die einzelnen Handelsweisen Großunternehmern bzw. Entrepreneuren zu.",
+    "optionen": [
+      "Entrepreneur",
+      "Großunternehmer"
+    ],
+    "zuordnungen": {
+      "Zusammenarbeit mit engagierten Partnern, die Mittel einbringen": "Entrepreneur",
+      "Zielorientiertes Handeln und Abschätzung der notwendigen Mittel": "Großunternehmer",
+      "Wettbewerbsintensive Beziehung zu Außenstehenden": "Großunternehmer",
+      "Fokus auf Minimierung des erschwinglichen Verlusts": "Entrepreneur",
+      "Nutzung von Unsicherheiten und Einbindung von externen Informationen": "Entrepreneur",
+      "Konzentration auf Vorhersage und Analyse von Daten zur Prognose": "Großunternehmer"
+    }
+  },
+  {
+    "typ": "zuordnung",
+    "frage": "Warum ist das sogenannte Outsourcing wichtig? Bitte kategorisieren Sie die folgenden Aussagen entweder als 'wahr' oder 'falsch'.",
+    "optionen": [
+      "wahr",
+      "falsch"
+    ],
+    "zuordnungen": {
+      "Durch Auslagerungen entstehen bessere Mitarbeiterverhältnisse und internes Konkurrenzdenken verringert sich.": "falsch",
+      "Aufgrund der Spezialisierung der Outsourcing-Partner steigt die Qualität des Ergebnisses.": "wahr",
+      "Der Teamgedanke hat einen sehr hohen Stellenwert, sodass intern nicht ausgelagert wird.": "falsch",
+      "Durch Outsourcing können sich Firmen auf ihr Kerngeschäft konzentrieren und somit Kosten reduzieren.": "wahr"
+    }
+  },
+  {
+    "typ": "zuordnung",
+    "frage": "Bitte ordnen Sie die unterschiedlichen Arten des Leaderships den entsprechenden Beschreibungen zu:",
+    "optionen": [
+      "Schafft Harmonie und baut emotionale Bindungen auf",
+      "Hat hohe Anforderungen an die Leistung",
+      "Entwickelt Menschen für die Zukunft",
+      "Mobilisiert Menschen zu einer Vision"
+    ],
+    "zuordnungen": {
+      "Affiliativer Stil": "Schafft Harmonie und baut emotionale Bindungen auf",
+      "Zukunftsweisender Stil": "Hat hohe Anforderungen an die Leistung",
+      "Coaching Stil": "Entwickelt Menschen für die Zukunft",
+      "Autoritativer Stil": "Mobilisiert Menschen zu einer Vision"
+    }
+  },
+  {
+    "typ": "zuordnung",
+    "frage": "Welche der folgendene Aussagen treffen auf die DuPont Analyse zu? Bitte kategorisieren Sie die folgenden Aussagen entweder als 'wahr' oder 'falsch'.",
+    "optionen": [
+      "wahr",
+      "falsch"
+    ],
+    "zuordnungen": {
+      "Die DuPont-Analyse basiert auf der Betrachtung nicht-finanzieller Leistungsindikatoren.": "falsch",
+      "Die Analyse gliedert den Return on Equity (ROE) in drei Teile: Gewinnmarge, Kapitalumschlag und Eigenkapitalmultiplikator.": "wahr",
+      "Die DuPont Analyse ist Beispiel für eine Balanced Scorecard.": "falsch",
+      "Die DuPont-Analyse hilft, Eigenkapitalrenditen innerhalb einer Branche zu vergleichen": "wahr"
+    }
+  },
+  {
+    "typ": "multiple_choice",
+    "frage": "Welches Ziel verfolgt die Analyse der optimalen Bestellmenge?",
+    "optionen": [
+      "Die optimale Bestellmenge zielt auf die geringstmögliche Bestellhäufigkeit ab.",
+      "Die optimale Bestellmenge versucht die Lagerhaltungskosten zu reduzieren und in möglichst geringen Mengen zu bestellen.",
+      "Die optimale Bestellmenge ermittelt unter Berücksichtigung der Bestellkosten und der Lagerhaltungskosten die kostengünstigste Bestellmenge."
+    ],
+    "korrekte_antworten": [
+      "Die optimale Bestellmenge ermittelt unter Berücksichtigung der Bestellkosten und der Lagerhaltungskosten die kostengünstigste Bestellmenge."
+    ]
+  },
+  {
+    "typ": "zuordnung",
+    "frage": "Welche Aussagen treffen zum Thema effiziente Produktion zu? Klassifizieren Sie bitte die folgenden Aussagen als 'wahr' oder 'falsch'.",
+    "optionen": [
+      "wahr",
+      "falsch"
+    ],
+    "zuordnungen": {
+      "Bei substitutionalen Produktionsfunktionen können verschiedene Kombinationen von Inputfaktoren denselben Output liefern.": "wahr",
+      "Die Minimalkostenkombination ergibt sich immer durch den maximal möglichen Einsatz des günstigeren Faktors.": "falsch",
+      "Effiziente Produktion ist ausschließlich dann gegeben, wenn alle Produktionsfaktoren vollständig ausgelastet sind.": "falsch",
+      "Bei der limitationalen Produktionsfunktion können Inputfaktoren beliebig substituiert werden, solange das Budget eingehalten wird.": "falsch"
+    }
+  },
+  {
+    "typ": "multiple_choice",
+    "frage": "Berechnen Sie die jährliche Rente (Annuität) eines Barwertes in Höhe von von 250 EUR bei einem Zins von 3% und einer Laufzeit von 20 Jahren. Bitte runden Sie auf die erste Nachkommastelle und geben Sie das Ergebnis in EUR an.",
+    "optionen": [
+      "11,2",
+      "13,5",
+      "9,6",
+      "16,8"
+    ],
+    "korrekte_antworten": [
+      "16,8"
+    ]
+  },
+  {
+    "typ": "multiple_choice",
+    "frage": "Welche der folgenden Aussagen zu Organisationstypen ist nicht korrekt?",
+    "optionen": [
+      "In der Matrixorganisation führen klare Hierarchien zu geringerem Konfliktpotenzial zwischen Führungskräften.",
+      "In der divisionalen Organisation existiert eine Trennung nach Produktverantwortung, wodurch dezentrale Einheiten entstehen.",
+      "Organisatorische Strukturen müssen flexibel sein, um geänderten Anforderungen im Geschäftsumfeld gerecht zu werden",
+      "In der funktionalen Organisation erfolgt die Gliederung nach Aufgabenbereichen; dies fördert Spezialisierung und tiefes Fachwissen."
+    ],
+    "korrekte_antworten": [
+      "In der Matrixorganisation führen klare Hierarchien zu geringerem Konfliktpotenzial zwischen Führungskräften."
+    ]
+  },
+  {
+    "typ": "multiple_choice",
+    "frage": "Die TIME GmbH nimmt einen neuen Gesellschafter auf. Er steuert dem Unternehmen 850.000 € seines Geldes bei und ist damit zu einem Drittel an dem Unternehmen beteiligt. Das Geld wird auf das betriebliche Bankkonto überwiesen. Das Geld wird für den Kauf zweier weiterer Fertigungszentren verwendet. Um welche Art der Finanzierung handelt es sich hierbei? Bitte wähle alle passenden Antwortmöglichkeiten aus.",
+    "optionen": [
+      "Fremdfinanzierung",
+      "Eigenfinanzierung",
+      "Innenfinanzierung",
+      "Außenfinanzierung",
+      "Finanzierung durch Vermögensumschichtung",
+      "Kreditfinanzierung"
+    ],
+    "korrekte_antworten": [
+      "Eigenfinanzierung",
+      "Außenfinanzierung"
+    ]
+  },
+  {
+    "typ": "multiple_choice",
+    "frage": "Bei einer Produktion von Schokoladentafeln entstehen Fixkosten in der Höhe von 950.000 Euro pro Jahr. Die variablen Kosten pro Tafel betragen 0,21 Euro. Im Supermarkt wird eine Tafel für 0,45 Euro verkauft. Bestimmen Sie die Stückzahl, die im Break-Even-Point produziert und abgesetzt werden muss und geben Sie anschließend als Antwort an, wie hoch der Umsatz des Unternehmens im Break-Even-Point ist (in Euro).",
+    "optionen": [
+      "831.250",
+      "950.000",
+      "3.958.333",
+      "1.781.250"
+    ],
+    "korrekte_antworten": [
+      "1.781.250"
+    ]
+  },
+  {
+    "typ": "multiple_choice",
+    "frage": "Ein Technologieunternehmen hat für den Kauf einer neuen Produktionsmaschine Anschaffungskosten in Höhe von 35.000 Euro in Jahr 0. Die daraus resultierenden fixen und variablen Kosten belaufen sich auf 6.000 Euro jährlich. Das Unternehmen nimmt 23.000 Euro im Jahr an Umsatzerlösen aus dem Verkauf der mit der Produktionsmaschine hergestellten Produkte ein. Sowohl die Kosten als auch die Erlöse treten ab Jahr $t=1$ auf. Berechnen Sie den Kapitalwert der Cashflows für einen Aktivitätszeitraum der Maschine von 3 Jahren ( $t=0$ bis $t=3$ ). Gehen Sie von einem Zinswert von 15% jährlich aus. Runden Sie bitte auf die nächste ganze Zahl (keine Nachkommastellen) und geben Sie das Ergebnis in Euro an.",
+    "optionen": [
+      "3.815",
+      "9.348",
+      "4.135",
+      "20.815",
+      "8.380"
+    ],
+    "korrekte_antworten": [
+      "3.815"
+    ]
+  },
+  {
+    "typ": "multiple_choice",
+    "frage": "Bitte vervollständigen Sie die nachfolgende Definition eines Unternehmens gemäß der Vorlesungsinhalte: Ein Unternehmen ist eine organisierte und systematische ___ Einheit, die Waren oder ___ herstellt oder vertreibt. Ziel des Unternehmens ist es, den ___ zu reduzieren.",
+    "optionen": [
+      "Wirtschaftliche, Dienstleistungen, Warenmangel"
+    ],
+    "korrekte_antworten": [
+      "Wirtschaftliche, Dienstleistungen, Warenmangel"
+    ]
+  },
+  {
+    "typ": "multiple_choice",
+    "frage": "Ein Autohersteller hat normalerweise einen jährlichen Gesamtbedarf von 95.000 Schrauben. Aufgrund eines Herstellungsfehlers, benötigt der Autohersteller dieses Jahr 15.000 Schrauben mehr. Diese Schrauben kosten im Einkauf pro Stück sieben Cent und das Unternehmen zahlt pro Bestellung 13 Euro. Bitte berechnen Sie die optimale Bestellmenge nach der Andlerformel bei einem Lagererhaltungskostensatz von acht Prozent. (Runde das Endergebnis auf ganze Zahlen)",
+    "optionen": [
+      "6641",
+      "21002",
+      "5244",
+      "22599"
+    ],
+    "korrekte_antworten": [
+      "6641"
+    ]
+  },
+  {
+    "typ": "multiple_choice",
+    "frage": "Berechnen Sie mithilfe der beistehenden Gewinn- und Verlustrechnung den Geldumschlag (Cash Conversion Cycle) der VW AG im Jahr 2024. Gehen Sie davon aus, dass die bilanziellen Durchschnittswerte im Jahre 2024 wie folgt lauten: Vorräte: 55160,5 Mio. €; Forderungen: 21489,5 Mio. €; Verbindlichkeiten: 30336,5 Mio. €. Bitte gehen Sie bei der Berechnung von 365 Tagen im Jahr aus und runden Sie das Ergebnis auf eine Nachkommastelle (in Tagen). (Runden Sie keine Zwischenergebnisse)",
+    "optionen": [
+      "93,5",
+      "58,3",
+      "117,7",
+      "141,8"
+    ],
+    "korrekte_antworten": [
+      "58,3"
+    ]
+  },
+  {
+    "typ": "zuordnung",
+    "frage": "Welche Aussagen treffen auf Opportunitätskosten zu? Klassifizieren Sie bitte die folgenden Aussagen als 'wahr' oder 'falsch'.",
+    "optionen": [
+      "wahr",
+      "falsch"
+    ],
+    "zuordnungen": {
+      "Opportunitätskosten sind hypothetische Kosten, die ex ante bewertet werden.": "wahr",
+      "Opportunitätskosten berechnen sich als: Rückgabe der gewählten Option - Rückgabe der lukrativsten Option.": "falsch",
+      "Opportunitätskosten sind relevant für zwei sich gegenseitig ausschließende Ereignisse.": "wahr",
+      "Opportunitätskosten sind Kostenpositionen, die bereits in der Vergangenheit aufgetreten sind und nicht mehr wieder eingezogen werden können.": "falsch"
+    }
+  },
+  {
+    "typ": "zuordnung",
+    "frage": "Bitte wählen Sie die richtigen Beschriftungen für die Lücken A, B, C und D in der Darstellung der Finanzierungsmöglichkeiten für Unternehmen aus.",
+    "optionen": [
+      "Bankkredit",
+      "Private Equity",
+      "Wachstum",
+      "Cashflow"
+    ],
+    "zuordnungen": {
+      "Lücke A": "Bankkredit",
+      "Lücke B": "Private Equity",
+      "Lücke C": "Wachstum",
+      "Lücke D": "Cashflow"
+    }
+  },
+  {
+    "typ": "zuordnung",
+    "frage": "Bitte klassifizieren Sie folgende Aussagen zum Thema markt- und ressourcenbasierte Strategien mit 'wahr' oder 'falsch'.",
+    "optionen": [
+      "wahr",
+      "falsch"
+    ],
+    "zuordnungen": {
+      "Marktbasierte Sichtweise: Wird auf der Grundlage von Trends im Branchenumfeld entwickelt.": "wahr",
+      "Ressourcenbasierte Sichtweise: Die Strategie konzentriert sich auf organisationsinterne Ressourcen.": "wahr",
+      "Marktbasierte Sichtweise: Ignoriert Wettbewerbsbedingungen zugunsten interner Ziele.": "falsch",
+      "Ressourcenbasierte Sichtweise: Die Strategie konzentriert sich auf organisationsexterne Ressourcen.": "falsch"
+    }
+  },
+  {
+    "typ": "zuordnung",
+    "frage": "Bitte befüllen Sie die Lücken A-E mit den korrekten Teilüberschriften der Bilanz.",
+    "optionen": [
+      "Anlagevermögen",
+      "Umlaufvermögen",
+      "Fremdkapital",
+      "Eigenkapital",
+      "Gewinn-/Verlustvortrag"
+    ],
+    "zuordnungen": {
+      "Lücke A": "Anlagevermögen",
+      "Lücke B": "Umlaufvermögen",
+      "Lücke C": "Fremdkapital",
+      "Lücke D": "Eigenkapital",
+      "Lücke E": "Gewinn-/Verlustvortrag"
+    }
+  },
+  {
+    "typ": "zuordnung",
+    "frage": "Bitte entscheiden Sie, welche der folgenden Aussagen laut Vorlesung zum Thema 'Unternehmensführung' zutreffen.",
+    "optionen": [
+      "wahr",
+      "falsch"
+    ],
+    "zuordnungen": {
+      "Führung ist ein Prozess des sozialen Einflusses.": "wahr",
+      "Führung entsteht immer durch Autorität oder Macht.": "falsch",
+      "Als Führungspersönlichkeit werden bestimmte Titel und Persönlichkeitsmerkmale benötigt.": "falsch",
+      "Führung ist ein Prozess der die Bemühungen anderer maximiert, um ein Ziel zu erreichen": "wahr",
+      "Führung beinhaltet ein klares Ziel oder beabsichtigtes Ergebnis.": "wahr"
+    }
+  },
+  {
+    "typ": "multiple_choice",
+    "frage": "Gegenwärtig ist die Firma Geschäfts AG in vier strategischen Geschäftsfeldern tätig. Aus den letzten Marktanalysen ergab sich folgendes Bild: Der relative Marktanteil des strategischen Geschäftsfeldes A beträgt: (auf die erste Kommastelle gerundet)",
+    "optionen": [
+      "37,5%",
+      "107,1%",
+      "46,9%",
+      "40,0%"
+    ],
+    "korrekte_antworten": [
+      "107,1%"
+    ]
+  },
+  {
+    "typ": "multiple_choice",
+    "frage": "Maslows Hierarchie der Bedürfnisse beschreibt ein Muster menschlicher Motivation. Welche Bedürfnisse sind Teil der Maslow Pyramide?",
+    "optionen": [
+      "Bedürfnisse nach Sicherheit",
+      "Bedürfnisse nach Wertschätzung",
+      "Bedürfnisse nach Macht",
+      "Bedürfnisse nach Selbstverwirklichung"
+    ],
+    "korrekte_antworten": [
+      "Bedürfnisse nach Sicherheit",
+      "Bedürfnisse nach Wertschätzung",
+      "Bedürfnisse nach Selbstverwirklichung"
+    ]
+  },
+  {
+    "typ": "multiple_choice",
+    "frage": "Bitte wählen Sie alle Arten von Unternehmen aus, die einen Lagebericht erstellen müssen.",
+    "optionen": [
+      "Händler & Geschäftspartner",
+      "Kleine Aktiengesellschaften",
+      "Mittlere und große Aktiengesellschaften"
+    ],
+    "korrekte_antworten": [
+      "Mittlere und große Aktiengesellschaften"
+    ]
+  },
+  {
+    "typ": "multiple_choice",
+    "frage": "Die Minimalkostenkombination in der Produktion wird angezeigt durch den Punkt, an dem sich zwei der unten stehenden Antwortmöglichkeiten treffen. Bitte wählen Sie die korrekten zwei Antworten aus.",
+    "optionen": [
+      "Budgetgerade",
+      "Kostenisoquante",
+      "Produktionsfunktion",
+      "Indifferenzkurve"
+    ],
+    "korrekte_antworten": [
+      "Budgetgerade",
+      "Kostenisoquante"
+    ]
+  },
+  {
+    "typ": "multiple_choice",
+    "frage": "Bitte wählen Sie alle Antwortmöglichkeiten aus, welche laut Vorlesung als 'Dynamische Bewertungsmethoden' beschrieben werden.",
+    "optionen": [
+      "Interner Zinssatz",
+      "Kapitalwert",
+      "Kostenvergleich",
+      "Rente"
+    ],
+    "korrekte_antworten": [
+      "Interner Zinssatz",
+      "Kapitalwert",
+      "Rente"
+    ]
+  },
+  {
+    "typ": "multiple_choice",
+    "frage": "Was ist das langfristige Ziel des Unternehmens Vivalyx, das Andreas Schumacher in der ersten Vorlesung vorgestellt hat?",
+    "optionen": [
+      "Mehr Menschen vom Veganismus zu überzeugen",
+      "Verbrauch von Verpackungsmaterialien im medizinischen Bereich zu reduzieren",
+      "Nahrungsergänzungsmittel anbieten, die die Herzaktivität steigern können",
+      "Zahl der auf Organspende wartenden Menschen zu reduzieren"
+    ],
+    "korrekte_antworten": [
+      "Zahl der auf Organspende wartenden Menschen zu reduzieren"
+    ]
+  },
+  {
+    "typ": "multiple_choice",
+    "frage": "Laut unser Gastrednerin Frau Bohle, welches Land ist neben Deutschland das wichtigste Umsatzland für die Telekom?",
+    "optionen": [
+      "Indien",
+      "China",
+      "Frankreich",
+      "USA"
+    ],
+    "korrekte_antworten": [
+      "USA"
+    ]
+  },
+  {
+    "typ": "multiple_choice",
+    "frage": "Welche der folgenden Marken gehören nicht zur BMW AG?",
+    "optionen": [
+      "Rolce Royce",
+      "Mini",
+      "Jaguar",
+      "Smart"
+    ],
+    "korrekte_antworten": [
+      "Jaguar",
+      "Smart"
+    ]
+  }
+]
